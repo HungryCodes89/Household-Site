@@ -115,18 +115,14 @@ body.locked { overflow: hidden; height: 100vh; }
 
 /* ── BRAND ARCH ──────────────────────────────────────────── */
 /*
-  SVG viewBox="0 400 1080 180" crops to y=400–580 of the 1080×1080 source image,
-  isolating the HOUSEHOLD arch text and stopping before EST. 2011 at ~y=590.
-  grayscale(1) strips JPEG color artifacts; contrast(50) maps the dark grey bg
-  (~18% luminance) to pure black; mix-blend-mode: screen then makes that black
-  transparent against the dark loader, leaving only the white text visible.
+  The SVG uses an internal luminanceToAlpha filter to convert the JPEG's
+  white text to the bone colour on a fully transparent background — no CSS
+  grayscale/contrast/blend-mode hacks. viewBox crops to HOUSEHOLD only.
 */
 .brand-arch-svg {
   width: min(60vw, 560px);
   display: block;
   opacity: 0;
-  filter: grayscale(1) contrast(50);
-  mix-blend-mode: screen;
 }
 .brand-arch-svg.visible {
   animation: arch-reveal 0.9s var(--ease-out) forwards;
@@ -495,12 +491,33 @@ body.entered .hero {
     <div class="timestamp">EST 2011 · YVR · 23:47</div>
   </div>
 
-  <!-- BRAND ARCH — SVG viewBox crops to HOUSEHOLD arch only (y=400–580 of 1080×1080 source).
-       CSS filter + screen blend renders white text transparently on the dark loader. -->
+  <!-- BRAND ARCH
+       viewBox crops to y=400–580 (HOUSEHOLD arch only, excluding EST. 2011).
+       The internal SVG filter: desaturate → luminance→alpha → gamma-correct →
+       flood bone-white → composite. Output: crisp bone text, transparent bg.
+       No CSS filter or mix-blend-mode needed. -->
   <svg class="brand-arch-svg" id="brandArch"
        viewBox="0 400 1080 180"
        xmlns="http://www.w3.org/2000/svg">
-    <image href="household-wordmark.jpg" x="0" y="0" width="1080" height="1080"/>
+    <defs>
+      <filter id="wm-clean" color-interpolation-filters="sRGB"
+              x="0%" y="0%" width="100%" height="100%">
+        <!-- 1. Strip JPEG colour cast -->
+        <feColorMatrix type="saturate" values="0" result="gray"/>
+        <!-- 2. Map luminance → alpha (RGB → 0, A = brightness) -->
+        <feColorMatrix in="gray" type="luminanceToAlpha" result="luma"/>
+        <!-- 3. Gamma=3 pushes dark grey alpha (~0.18³ ≈ 0.006) to near-zero
+                while keeping bright anti-aliasing pixels (0.9³ = 0.73) -->
+        <feComponentTransfer in="luma" result="alpha">
+          <feFuncA type="gamma" amplitude="1" exponent="3" offset="0"/>
+        </feComponentTransfer>
+        <!-- 4. Flood bone-white; mask by processed alpha -->
+        <feFlood flood-color="#f5f1ea" flood-opacity="1" result="fill"/>
+        <feComposite in="fill" in2="alpha" operator="in"/>
+      </filter>
+    </defs>
+    <image href="household-wordmark.jpg" x="0" y="0" width="1080" height="1080"
+           filter="url(#wm-clean)"/>
   </svg>
 
   <!-- LOGO STAGE -->
