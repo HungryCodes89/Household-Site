@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HOUSEHOLD — Enter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Bebas+Neue&family=Outfit:wght@200;300;400;500&family=Graduate&display=swap" rel="stylesheet">
+<style>
+
+/* ── DESIGN TOKENS ───────────────────────────────────────── */
+:root {
+  --bg:          #0a0a0a;
+  --bg-deep:     #050505;
+  --brick:       #1c1c1c;
+  --bone:        #f5f1ea;
+  --bone-dim:    #b8b3a8;
+  --blood:       #b8000c;
+  --gold:        #d4af37;
+  --gold-warm:   #f5c842;
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.7, 0, 0.3, 1);
+  --ease-cinema: cubic-bezier(0.7, 0, 0.84, 0);
+}
+
+/* ── RESET ───────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--bg);
+  color: var(--bone);
+  font-family: 'Outfit', sans-serif;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+body.locked { overflow: hidden; height: 100vh; }
+
+/* ── ATMOSPHERE ──────────────────────────────────────────── */
+.grain {
+  position: fixed; inset: 0; pointer-events: none; z-index: 9000;
+  opacity: 0.08; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+.vignette {
+  position: fixed; inset: 0; pointer-events: none; z-index: 8500;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.75) 100%);
+}
+
+/* ── LOADER ──────────────────────────────────────────────── */
+#loader {
+  position: fixed; inset: 0; z-index: 9999;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 1.8rem; padding: 2rem;
+}
+#loader.exit {
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+
+/* ACT 3 bottom gold line only — top line removed */
+.gold-line {
+  position: absolute; left: 0; right: 0; height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--gold) 12%,
+    var(--gold) 88%,
+    transparent 100%
+  );
+  opacity: 0.65;
+}
+.gold-line.bottom { bottom: 3.2rem; opacity: 0; }
+.gold-line.bottom.drawing {
+  opacity: 0.65;
+  animation: line-draw 0.8s var(--ease-out) forwards;
+}
+
+/* ACT 1 bottom-left labels */
+.act1-labels {
+  position: absolute; bottom: 2rem; left: 2.5rem;
+  display: flex; flex-direction: column; gap: 0.35rem;
+  pointer-events: none;
+}
+.foundation-label {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.6rem; letter-spacing: 0.5em; font-weight: 300;
+  color: var(--gold); text-transform: uppercase;
+  opacity: 0;
+  animation: label-flash 1.8s ease 0.15s forwards;
+  text-shadow: 0 0 10px rgba(212, 175, 55, 0.7), 0 0 28px rgba(212, 175, 55, 0.35);
+}
+.timestamp {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.56rem; letter-spacing: 0.35em; font-weight: 200;
+  color: var(--bone-dim); text-transform: uppercase; opacity: 0.45;
+}
+
+/* ── LOGO STAGE ──────────────────────────────────────────── */
+.logo-stage {
+  width: min(48vw, 440px);
+  aspect-ratio: 340 / 305;
+  position: relative;
+  filter:
+    drop-shadow(0 0 18px rgba(212, 175, 55, 0.3))
+    drop-shadow(0 0 50px rgba(212, 175, 55, 0.12));
+}
+
+#brick-svg {
+  width: 100%; height: 100%;
+  overflow: visible; display: block;
+}
+
+/* ── BRAND ARCH ──────────────────────────────────────────── */
+/*
+  Wrapper crops the image to show only the HOUSEHOLD arch —
+  margin-top: -34% scrolls the square image up to where the arch text sits;
+  height: 20% of width clips just before EST. 2011 appears.
+  mix-blend-mode: screen + contrast(8) = dark grey bg disappears, white text shows.
+*/
+.brand-arch-wrap {
+  width: min(52vw, 480px);
+  height: calc(min(52vw, 480px) * 0.20);
+  overflow: hidden;
+  opacity: 0;
+  mix-blend-mode: screen;
+}
+.brand-arch-wrap.visible {
+  animation: arch-reveal 0.9s var(--ease-out) forwards;
+}
+@keyframes arch-reveal {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.brand-arch-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  filter: contrast(8);
+  margin-top: -34%;
+}
+
+/* Loader bricks — wave-in animation, delays assigned by JS */
+.brick {
+  fill: var(--brick);
+  stroke: none;
+  transform-box: fill-box;
+  transform-origin: center center;
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: brick-place 0.4s var(--ease-out) both;
+}
+
+/* ── DOOR ────────────────────────────────────────────────── */
+/*
+  Centered horizontally on house body (x≈338/340 = 46.1% of viewBox).
+  Bottom anchored near house floor: top 84% + translate -100% Y aligns
+  door bottom with house base (SVG y≈346.94, viewBox y=90–395 → 84.2%).
+*/
+.door-wrap {
+  position: absolute;
+  left: 46.1%; top: 84.2%;
+  transform: translate(-50%, -100%);
+  width: 24.8%;
+  aspect-ratio: 84 / 134;
+  perspective: 1200px;
+  transform-style: preserve-3d;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.door-light {
+  position: absolute; inset: -4px;
+  background: radial-gradient(
+    ellipse at 50% 80%,
+    rgba(245, 200, 66, 0.28) 0%,
+    rgba(200, 100, 0, 0.12) 40%,
+    transparent 70%
+  );
+  border-radius: 3px 3px 0 0;
+  pointer-events: none;
+}
+
+.door {
+  position: absolute; inset: 0;
+  background: linear-gradient(160deg, #222222 0%, #1c1c1c 100%);
+  border: 1.5px solid var(--gold);
+  border-bottom: none;
+  border-radius: 2px 2px 0 0;
+  transform-origin: left center;
+  box-shadow:
+    0 0 0 1px rgba(212, 175, 55, 0.15),
+    0 0 18px rgba(212, 175, 55, 0.22),
+    inset 0 0 12px rgba(245, 200, 66, 0.06);
+}
+
+/* Gothic arch */
+.door::before {
+  content: '';
+  position: absolute;
+  top: 5%; left: 50%;
+  transform: translateX(-50%);
+  width: 58%; height: 22%;
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  border-bottom: none;
+  border-radius: 50% 50% 0 0;
+}
+
+/* Doorknob */
+.door::after {
+  content: '';
+  position: absolute;
+  top: 50%; right: 12%;
+  width: 5px; height: 5px;
+  background: var(--gold-warm);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--gold-warm), 0 0 14px rgba(245, 200, 66, 0.5);
+}
+
+/* ── BRAND META ──────────────────────────────────────────── */
+.brand-meta {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.62rem; letter-spacing: 0.55em; font-weight: 200;
+  color: var(--bone-dim); text-transform: uppercase;
+}
+
+/* ── INVITATION TEXT ─────────────────────────────────────── */
+.invitation-text {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 0.9rem; text-align: center;
+}
+
+.headline {
+  font-family: 'Playfair Display', serif;
+  font-weight: 400; font-style: italic;
+  font-size: clamp(2rem, 3.8vw, 3.2rem);
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--bone);
+  clip-path: inset(0 100% 0 0);
+  text-shadow:
+    0 0 15px rgba(245, 241, 234, 0.45),
+    0 0 50px rgba(245, 241, 234, 0.15),
+    0 0 90px rgba(212, 175, 55, 0.12);
+}
+
+.door-instruction {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.62rem; letter-spacing: 0.45em; font-weight: 300;
+  color: var(--bone-dim); text-transform: uppercase;
+}
+
+/* ── COUNTER + SKIP ──────────────────────────────────────── */
+.build-counter {
+  position: fixed; bottom: 2.5rem; left: 2.5rem;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.9rem; letter-spacing: 0.2em;
+  color: var(--bone-dim); z-index: 10000;
+}
+.build-counter .pct {
+  color: var(--gold);
+  text-shadow:
+    0 0 8px rgba(212, 175, 55, 0.6),
+    0 0 24px rgba(212, 175, 55, 0.25);
+}
+
+.skip-btn {
+  position: fixed; bottom: 2.5rem; right: 2.5rem;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.6rem; letter-spacing: 0.4em; font-weight: 300;
+  color: var(--bone-dim); background: none;
+  border: 1px solid rgba(245, 241, 234, 0.15);
+  padding: 0.55rem 1rem; cursor: pointer;
+  text-transform: uppercase; z-index: 10000;
+  transition: color 0.2s, border-color 0.2s;
+}
+.skip-btn:hover { color: var(--bone); border-color: rgba(212,175,55,0.5); }
+
+/* ── FLASH OVERLAY ───────────────────────────────────────── */
+.flash-overlay {
+  position: fixed; inset: 0;
+  background: var(--gold-warm);
+  opacity: 0; pointer-events: none; z-index: 9998;
+}
+
+/* ── HERO ────────────────────────────────────────────────── */
+.hero {
+  min-height: 100vh; position: relative;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: var(--bg); overflow: hidden;
+  padding: 6rem 2rem 6rem;
+}
+
+.hero-bg {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 30%, rgba(184, 0, 12, 0.07) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 70%, rgba(212, 175, 55, 0.04) 0%, transparent 55%);
+}
+
+.hero-mark {
+  width: min(28vw, 220px);
+  aspect-ratio: 340 / 305;
+  filter: drop-shadow(0 0 14px rgba(212, 175, 55, 0.2));
+  position: relative; z-index: 1;
+}
+.hero-mark svg { width: 100%; height: 100%; display: block; }
+
+.hero-headline {
+  font-family: 'Playfair Display', serif;
+  font-style: italic; font-weight: 400;
+  font-size: clamp(2.8rem, 7vw, 6.5rem);
+  text-align: center; margin-top: 2rem;
+  line-height: 1.05; color: var(--bone);
+  position: relative; z-index: 1;
+  text-shadow:
+    0 0 30px rgba(245, 241, 234, 0.2),
+    0 0 80px rgba(212, 175, 55, 0.1);
+}
+.hero-headline em { font-weight: 700; color: var(--blood); font-style: italic; }
+
+.hero-sub {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 200;
+  font-size: 0.75rem; letter-spacing: 0.55em;
+  text-transform: uppercase; color: var(--bone-dim);
+  margin-top: 1.5rem; position: relative; z-index: 1;
+}
+
+/* ── MARQUEE ─────────────────────────────────────────────── */
+.marquee {
+  width: 100%; overflow: hidden;
+  border-top: 1px solid rgba(245, 241, 234, 0.1);
+  border-bottom: 1px solid rgba(245, 241, 234, 0.1);
+  padding: 1.2rem 0; margin-top: 4rem;
+  position: relative; z-index: 1;
+}
+.marquee-track { display: flex; width: max-content; }
+.marquee-item {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.85rem; letter-spacing: 0.3em;
+  text-transform: uppercase; color: var(--bone);
+  padding: 0 2rem; white-space: nowrap;
+}
+.marquee-dot { color: var(--blood); padding: 0 1rem; align-self: center; }
+
+/* ── SCROLL CUE ──────────────────────────────────────────── */
+.scroll-cue {
+  position: absolute; bottom: 2rem; left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.7rem; letter-spacing: 0.4em;
+  color: var(--bone-dim); text-transform: uppercase;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 0.5rem; opacity: 0.65;
+}
+.scroll-cue::after {
+  content: ''; width: 1px; height: 30px;
+  background: var(--bone-dim);
+}
+
+/* ── RESPONSIVE ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .logo-stage     { width: 80vw; }
+  .act1-labels    { left: 1.2rem; bottom: 1.5rem; }
+  .build-counter  { left: 1.2rem; bottom: 1.5rem; font-size: 0.6rem; }
+  .skip-btn       { right: 1.2rem; bottom: 1.5rem; font-size: 0.55rem; }
+}
+
+/* ── PHASE 2 KEYFRAMES ───────────────────────────────────── */
+
+@keyframes line-draw {
+  from { clip-path: inset(0 100% 0 0); }
+  to   { clip-path: inset(0 0 0 0); }
+}
+
+@keyframes label-flash {
+  0%   { opacity: 0; }
+  16%  { opacity: 0.7; }
+  72%  { opacity: 0.7; }
+  100% { opacity: 0; }
+}
+
+@keyframes brick-place {
+  0%   { transform: scale(0.25); opacity: 0; }
+  65%  { transform: scale(1.03); opacity: 1; }
+  85%  { transform: scale(0.99); }
+  100% { transform: scale(1);    opacity: 1; }
+}
+
+@keyframes act3-burst {
+  0% {
+    filter:
+      drop-shadow(0 0 18px  rgba(212,175,55,0.3))
+      drop-shadow(0 0 50px  rgba(212,175,55,0.12));
+  }
+  18% {
+    filter:
+      drop-shadow(0 0 60px  rgba(212,175,55,1.0))
+      drop-shadow(0 0 120px rgba(212,175,55,0.7))
+      drop-shadow(0 0 220px rgba(212,175,55,0.4))
+      brightness(3.0);
+  }
+  55% {
+    filter:
+      drop-shadow(0 0 35px rgba(212,175,55,0.7))
+      drop-shadow(0 0 90px rgba(212,175,55,0.4))
+      brightness(1.4);
+  }
+  100% {
+    filter:
+      drop-shadow(0 0 18px rgba(212,175,55,0.3))
+      drop-shadow(0 0 50px rgba(212,175,55,0.12));
+  }
+}
+
+/* Phase 3 reveals these; hidden throughout Phase 2 */
+.door-wrap        { opacity: 0; pointer-events: none; }
+.invitation-text  { display: none; }
+.brand-meta       { opacity: 0; }
+
+/* ACT 3 glow explosion on logo-stage */
+.logo-stage.act3  { animation: act3-burst 0.65s ease forwards; }
+
+/* ── PHASE 3: DOOR + HERO ────────────────────────────────── */
+
+@keyframes door-enter {
+  from { opacity: 0; transform: translate(-50%, -92%); }
+  to   { opacity: 1; transform: translate(-50%, -100%); }
+}
+.door-wrap.visible {
+  animation: door-enter 0.55s var(--ease-out) forwards;
+  pointer-events: auto;
+}
+
+/* Headline wipe — reuses line-draw from Phase 2 */
+.headline.visible {
+  animation: line-draw 0.85s var(--ease-out) forwards;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 0.45; }
+  50%      { opacity: 0.12; }
+}
+.door-instruction.blinking {
+  animation: blink 1.5s ease-in-out infinite;
+}
+
+/* Hero hidden until body.entered */
+.hero { opacity: 0; }
+body.entered .hero {
+  opacity: 1;
+  transition: opacity 0.9s ease 0.3s;
+}
+
+/* Counter hidden until ACT 2 start (JS fades it in) */
+#counter { opacity: 0; transition: opacity 0.3s ease; }
+
+/* ── HH MONOGRAM REPEAT PATTERN ─────────────────────────── */
+/*
+  Tiles the HH wings mark at small size across the entire page —
+  luxury-wallpaper style (LV monogram reference).
+  filter: invert(1)  → white marks on black
+  mix-blend-mode: screen → black becomes transparent on dark bg,
+  leaving only the white logo ghost strokes.
+*/
+.monogram-pattern {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  background-image: url("HH%20wings%20logo%20%282%29.png");
+  background-size: 78px auto;
+  background-repeat: repeat;
+  filter: invert(1);
+  mix-blend-mode: screen;
+  opacity: 0.045;
+}
+
+</style>
+</head>
+<body class="locked">
+
+<div class="grain"></div>
+<div class="vignette"></div>
+<div class="monogram-pattern"></div>
+
+<!-- ═══════════════════════════════════════════════════════
+     LOADER
+═══════════════════════════════════════════════════════ -->
+<div id="loader">
+
+  <!-- ACT 3 bottom gold line -->
+  <div class="gold-line bottom" id="lineBottom"></div>
+
+  <!-- ACT 1 atmospheric labels (bottom-left) -->
+  <div class="act1-labels">
+    <div class="foundation-label" id="foundationLabel">FOUNDATION LAID</div>
+    <div class="timestamp">EST 2011 · YVR · 23:47</div>
+  </div>
+
+  <!-- BRAND ARCH — actual Household collegiate wordmark image.
+       Screen blend makes dark grey bg transparent; white text shows through. -->
+  <div class="brand-arch-wrap" id="brandArch">
+    <img class="brand-arch-img" src="household-wordmark.jpg" alt="HOUSEHOLD">
+  </div>
+
+  <!-- LOGO STAGE -->
+  <div class="logo-stage" id="logoStage">
+
+    <svg id="brick-svg"
+         viewBox="180 90 340 305"
+         preserveAspectRatio="xMidYMid meet"
+         xmlns="http://www.w3.org/2000/svg">
+      <defs>
+
+        <!-- Multi-layer glow burst for ACT 3 (Phase 2) -->
+        <filter id="glow-burst" x="-80%" y="-80%" width="260%" height="260%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="5"  result="b1"/>
+          <feGaussianBlur in="SourceGraphic" stdDeviation="15" result="b2"/>
+          <feGaussianBlur in="SourceGraphic" stdDeviation="38" result="b3"/>
+          <feMerge>
+            <feMergeNode in="b3"/>
+            <feMergeNode in="b2"/>
+            <feMergeNode in="b1"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+
+        <!-- House clip paths — ring roof + H-body matching the actual Household logo.
+             Roof ring: outer triangle (peak at ~110, eaves at ~174) minus inner triangle.
+             Inner eave x aligned to body wall edges (205.55 / 470.89) so no corner gap.
+             Body: H-shape with chimney slot (top) and door arch (bottom). -->
+        <clipPath id="house-mask" clipPathUnits="userSpaceOnUse">
+          <path d="M491.09,173.95 L341.58,110.58 L185.36,173.80 L205.55,188.5 L341.44,127.84 L470.89,188.5 Z"/>
+          <path d="M379.03,188.5 V212.78 H294.62 V188.5 H205.55 V346.94 H294.62 V326.79 H379.03 V346.94 H470.89 V188.5 Z"/>
+        </clipPath>
+
+      </defs>
+      <!-- Bricks generated by JS below -->
+      <g clip-path="url(#house-mask)" id="brick-group"></g>
+    </svg>
+
+    <!-- DOOR (Act 4 — interaction wired in Phase 3) -->
+    <div class="door-wrap" id="doorWrap">
+      <div class="door-light"></div>
+      <div class="door" id="door"></div>
+    </div>
+
+  </div><!-- /logo-stage -->
+
+  <div class="brand-meta" id="brandMeta">EST 2011 · VANCOUVER BC</div>
+
+  <div class="invitation-text" id="invitationText">
+    <div class="headline" id="headline">ENTER THE HOUSEHOLD</div>
+    <div class="door-instruction" id="doorInstruction">[ CROSS THE THRESHOLD ]</div>
+  </div>
+
+</div><!-- /loader -->
+
+<!-- Fixed UI elements -->
+<div class="build-counter" id="counter">
+  <span id="counterLabel">BUILDING</span>&nbsp;<span class="pct" id="pct">000</span>%
+</div>
+<button class="skip-btn" id="skipBtn">[ SKIP ]</button>
+<div class="flash-overlay" id="flash"></div>
+
+<!-- ═══════════════════════════════════════════════════════
+     HERO
+═══════════════════════════════════════════════════════ -->
+<section class="hero" id="hero">
+  <div class="hero-bg"></div>
+
+  <div class="hero-mark">
+    <svg xmlns="http://www.w3.org/2000/svg"
+         viewBox="180 90 340 305"
+         preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <clipPath id="hero-house-mask" clipPathUnits="userSpaceOnUse">
+          <path d="M491.09,173.95 L341.58,110.58 L185.36,173.80 L205.55,188.5 L341.44,127.84 L470.89,188.5 Z"/>
+          <path d="M379.03,188.5 V212.78 H294.62 V188.5 H205.55 V346.94 H294.62 V326.79 H379.03 V346.94 H470.89 V188.5 Z"/>
+        </clipPath>
+      </defs>
+      <g clip-path="url(#hero-house-mask)" id="hero-brick-group"></g>
+    </svg>
+  </div>
+
+  <h1 class="hero-headline">
+    A house. <em>A frequency.</em><br>A way of moving.
+  </h1>
+  <p class="hero-sub">music · lifestyle · apparel</p>
+
+  <div class="marquee">
+    <div class="marquee-track">
+      <span class="marquee-item">FREE SKI MASK WITH ORDERS OVER $100</span>
+      <span class="marquee-dot">●</span>
+      <span class="marquee-item">AUTOMATED SHIPPING TO CANADA ONLY</span>
+      <span class="marquee-dot">●</span>
+      <span class="marquee-item">US / INTERNATIONAL — info@thehouseholdbrand.com</span>
+      <span class="marquee-dot">●</span>
+      <span class="marquee-item">NEW DROP INCOMING</span>
+      <span class="marquee-dot">●</span>
+      <span class="marquee-item">FREE SKI MASK WITH ORDERS OVER $100</span>
+      <span class="marquee-dot">●</span>
+      <span class="marquee-item">AUTOMATED SHIPPING TO CANADA ONLY</span>
+      <span class="marquee-dot">●</span>
+      <span class="marquee-item">US / INTERNATIONAL — info@thehouseholdbrand.com</span>
+      <span class="marquee-dot">●</span>
+      <span class="marquee-item">NEW DROP INCOMING</span>
+      <span class="marquee-dot">●</span>
+    </div>
+  </div>
+
+  <div class="scroll-cue">SCROLL</div>
+</section>
+
+<!-- GSAP for door-click cinematic sequence (Phase 3) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+<!-- ═══════════════════════════════════════════════════════
+     SCRIPT — Phase 2 + 3: full loader orchestration
+═══════════════════════════════════════════════════════ -->
+<script>
+(function () {
+  'use strict';
+
+  /* ── SVG geometry ───────────────────────────────────────── */
+  const NS      = 'http://www.w3.org/2000/svg';
+  const X_START = 180, X_END = 524, X_STEP = 8;
+  const Y_START = 104, Y_END = 399, Y_STEP = 8;
+  const BRICK_W = 9.2, BRICK_H = 9.2;
+
+  /* ── Timing (ms) ────────────────────────────────────────── */
+  const T = {
+    ACT2_START : 400,
+    ACT2_END   : 3400,
+    ACT3_START : 3400,
+    ACT4_START : 4100,   // door appears after ACT3 burst settles
+    STAGGER    : 2550,
+    BRICK_DUR  : 450,
+  };
+
+  /* ── Build loader bricks with wave delays ───────────────── */
+  function buildLoaderBricks(groupEl) {
+    const frag    = document.createDocumentFragment();
+    const X_RANGE = X_END - X_START;
+    const Y_RANGE = Y_END - Y_START;
+    const ACT2_S  = T.ACT2_START / 1000;
+    const STAG_S  = T.STAGGER    / 1000;
+
+    for (let y = Y_START; y <= Y_END; y += Y_STEP) {
+      for (let x = X_START; x <= X_END; x += X_STEP) {
+        const r = document.createElementNS(NS, 'rect');
+        r.setAttribute('x', x); r.setAttribute('y', y);
+        r.setAttribute('width', BRICK_W); r.setAttribute('height', BRICK_H);
+        r.setAttribute('class', 'brick');
+        /* yNorm: 0 at bottom, 1 at top — bricks rise from bottom-left */
+        const yNorm = (Y_END - y) / Y_RANGE;
+        const xNorm = (x - X_START) / X_RANGE;
+        r.style.animationDelay    = (ACT2_S + (yNorm * 0.8 + xNorm * 0.2) * STAG_S).toFixed(3) + 's';
+        r.style.animationDuration = (T.BRICK_DUR / 1000).toFixed(3) + 's';
+        frag.appendChild(r);
+      }
+    }
+    groupEl.appendChild(frag);
+  }
+
+  /* ── Build hero bricks (static) ─────────────────────────── */
+  function buildHeroBricks(groupEl) {
+    const frag = document.createDocumentFragment();
+    for (let y = Y_START; y <= Y_END; y += Y_STEP) {
+      for (let x = X_START; x <= X_END; x += X_STEP) {
+        const r = document.createElementNS(NS, 'rect');
+        r.setAttribute('x', x); r.setAttribute('y', y);
+        r.setAttribute('width', BRICK_W); r.setAttribute('height', BRICK_H);
+        r.setAttribute('fill', '#1c1c1c');
+        r.setAttribute('shape-rendering', 'crispEdges');
+        frag.appendChild(r);
+      }
+    }
+    groupEl.appendChild(frag);
+  }
+
+  /* ── DOM refs ───────────────────────────────────────────── */
+  const loader     = document.getElementById('loader');
+  const logoStage  = document.getElementById('logoStage');
+  const pctEl      = document.getElementById('pct');
+  const labelEl    = document.getElementById('counterLabel');
+  const lineBottom = document.getElementById('lineBottom');
+  const brandMeta  = document.getElementById('brandMeta');
+  const skipBtn    = document.getElementById('skipBtn');
+  const counterEl  = document.getElementById('counter');
+  const doorWrap   = document.getElementById('doorWrap');
+  const door       = document.getElementById('door');
+  const doorLight  = doorWrap.querySelector('.door-light');
+  const invText    = document.getElementById('invitationText');
+  const headline   = document.getElementById('headline');
+  const doorInstr  = document.getElementById('doorInstruction');
+  const flash      = document.getElementById('flash');
+  const brandArch  = document.getElementById('brandArch');
+
+  /* ── Build ──────────────────────────────────────────────── */
+  buildLoaderBricks(document.getElementById('brick-group'));
+  buildHeroBricks(document.getElementById('hero-brick-group'));
+
+  /* ── Returning-user: skip loader entirely ───────────────── */
+  if (sessionStorage.getItem('hh_entered') === '1') {
+    loader.style.display    = 'none';
+    counterEl.style.display = 'none';
+    skipBtn.style.display   = 'none';
+    document.body.classList.remove('locked');
+    document.body.classList.add('entered');
+    return;
+  }
+
+  /* ── State ──────────────────────────────────────────────── */
+  const timeouts = [];
+  let rafId      = null;
+  let skipped    = false;
+  let entered    = false;
+
+  /* ── Jump to ACT4-ready state ([ SKIP ] / ESC) ──────────── */
+  function snapToAct4() {
+    if (skipped || entered) return;
+    skipped = true;
+    timeouts.forEach(clearTimeout);
+    if (rafId) cancelAnimationFrame(rafId);
+
+    document.querySelectorAll('.brick').forEach(b => {
+      b.style.animationDelay    = '0s';
+      b.style.animationDuration = '0.01s';
+    });
+
+    pctEl.textContent          = '100';
+    labelEl.textContent        = 'HOUSEHOLD ONLINE';
+    logoStage.classList.add('act3');
+    lineBottom.classList.add('drawing');
+    brandMeta.style.transition = 'none';
+    brandMeta.style.opacity    = '1';
+    counterEl.style.opacity    = '1';
+
+    revealAct4();
+  }
+
+  skipBtn.addEventListener('click', snapToAct4);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') snapToAct4(); });
+
+  /* ── Counter: 000→100 over ACT2 window ─────────────────── */
+  function startCounter() {
+    /* counter is opacity:0 in CSS — fade it in when building starts */
+    timeouts.push(setTimeout(() => {
+      if (!skipped) counterEl.style.opacity = '1';
+    }, T.ACT2_START));
+
+    const startMs  = performance.now() + T.ACT2_START;
+    const duration = T.ACT2_END - T.ACT2_START;
+
+    function tick(now) {
+      if (skipped) return;
+      const progress = Math.min(Math.max((now - startMs) / duration, 0), 1);
+      const eased    = 1 - Math.pow(1 - progress, 2); // ease-out quad
+      pctEl.textContent = String(Math.floor(eased * 100)).padStart(3, '0');
+      if (progress < 1) rafId = requestAnimationFrame(tick);
+    }
+    rafId = requestAnimationFrame(tick);
+  }
+
+  /* ── Random brick flash during ACT 2 ───────────────────── */
+  function startBrickFlash() {
+    const bricks = Array.from(document.querySelectorAll('.brick'));
+    function doFlash() {
+      if (skipped) return;
+      const b = bricks[Math.floor(Math.random() * bricks.length)];
+      b.style.fill = '#2a2a2a';
+      timeouts.push(setTimeout(() => { b.style.fill = ''; }, 110));
+      timeouts.push(setTimeout(doFlash, 280 + Math.random() * 320));
+    }
+    timeouts.push(setTimeout(doFlash, T.ACT2_START + 400));
+  }
+
+  /* ── ACT 3: glow explosion + label change ───────────────── */
+  function triggerAct3() {
+    if (skipped) return;
+    pctEl.textContent          = '100';
+    labelEl.textContent        = 'HOUSEHOLD ONLINE';
+    logoStage.classList.add('act3');
+    lineBottom.classList.add('drawing');
+    brandMeta.style.transition = 'opacity 0.5s ease 0.25s';
+    brandMeta.style.opacity    = '1';
+  }
+
+  /* ── ACT 4: door + invitation reveal ───────────────────── */
+  function revealAct4() {
+    brandArch.classList.add('visible');
+    doorWrap.classList.add('visible');
+
+    timeouts.push(setTimeout(() => {
+      invText.style.transition = 'opacity 0.6s ease';
+      invText.style.opacity    = '1';
+
+      timeouts.push(setTimeout(() => { headline.classList.add('visible'); }, 150));
+      timeouts.push(setTimeout(() => { doorInstr.classList.add('blinking'); }, 950));
+    }, 220));
+  }
+
+  /* ── Door click: GSAP cinematic enter sequence ──────────── */
+  function enterSequence() {
+    if (entered) return;
+    entered = true;
+    doorWrap.style.pointerEvents = 'none';
+
+    const tl = gsap.timeline();
+
+    /* 1. Compress */
+    tl.to(door, { scaleX: 0.96, scaleY: 0.98, duration: 0.09, ease: 'power1.in' })
+
+    /* 2. Swing open — hinge on left edge */
+      .to(door, { rotationY: -110, duration: 0.65, ease: 'power2.in' })
+
+    /* 3. Light spill fades as door swings */
+      .to(doorLight, { opacity: 0, duration: 0.45, ease: 'power1.in' }, '<0.1')
+
+    /* 4a. Arch fades out as we push forward */
+      .to(brandArch, { opacity: 0, duration: 0.3, ease: 'power1.in' }, '-=0.5')
+
+    /* 4b. Camera walk-in: scale toward door */
+      .to(logoStage, {
+        scale: 9,
+        duration: 1.1,
+        ease: 'power3.in',
+        transformOrigin: '46% 84%',
+      }, '-=0.2')
+
+    /* 5. Gold overexposure flash */
+      .to(flash, { opacity: 1, duration: 0.18, ease: 'power2.in' }, '-=0.45')
+      .to(flash, { opacity: 0, duration: 0.4,  ease: 'power1.out' })
+
+    /* 6. Loader fades to deep black */
+      .to(loader, { opacity: 0, duration: 0.45 }, '-=0.3')
+
+    /* 7. Hand off to hero */
+      .add(() => {
+        loader.classList.add('exit');
+        counterEl.style.display = 'none';
+        skipBtn.style.display   = 'none';
+        document.body.classList.remove('locked');
+        document.body.classList.add('entered');
+        sessionStorage.setItem('hh_entered', '1');
+      });
+  }
+
+  doorWrap.addEventListener('click', enterSequence);
+
+  /* ── Launch ─────────────────────────────────────────────── */
+  startCounter();
+  startBrickFlash();
+  timeouts.push(setTimeout(triggerAct3, T.ACT3_START));
+  timeouts.push(setTimeout(revealAct4,  T.ACT4_START));
+
+})();
+</script>
+</body>
+</html>
