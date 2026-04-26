@@ -115,16 +115,19 @@ body.locked { overflow: hidden; height: 100vh; }
 
 /* ── BRAND ARCH ──────────────────────────────────────────── */
 /*
-  Wrapper crops the image to show only the HOUSEHOLD arch —
-  margin-top: -34% scrolls the square image up to where the arch text sits;
-  height: 20% of width clips just before EST. 2011 appears.
-  mix-blend-mode: screen + contrast(8) = dark grey bg disappears, white text shows.
+  Wrapper crops the image to show only the HOUSEHOLD arch.
+  margin-top: -34% on the img scrolls the square JPEG up to the arch text area;
+  height: 20% of width clips just before EST. 2011.
+  grayscale removes JPEG color artifacts; contrast(50) pushes the dark grey bg
+  to pure black; mix-blend-mode: screen makes that black fully transparent
+  against the dark loader, leaving only the white text visible.
 */
 .brand-arch-wrap {
   width: min(52vw, 480px);
   height: calc(min(52vw, 480px) * 0.20);
   overflow: hidden;
   opacity: 0;
+  filter: grayscale(1) contrast(50);
   mix-blend-mode: screen;
 }
 .brand-arch-wrap.visible {
@@ -138,7 +141,6 @@ body.locked { overflow: hidden; height: 100vh; }
   width: 100%;
   height: auto;
   display: block;
-  filter: contrast(8);
   margin-top: -34%;
 }
 
