@@ -9,13 +9,13 @@
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,400;0,700;0,900;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0a0a0a;
-    --silhouette-fill: #161616;
-    --brick-fill: #2e2e2e;
-    --bone: #f5f1ea;
-    --bone-dim: #9a9490;
+    --bg: #f5f1ea;
+    --silhouette-fill: #0a0a0a;
+    --brick-fill: #1a1a1a;
+    --bone: #0a0a0a;
+    --bone-dim: #6a6a6a;
     --blood: #b8000c;
-    --gold: #d4af37;
+    --gold: #0a0a0a;
     --gold-warm: #f5c842;
     --easeOut: cubic-bezier(0.16, 1, 0.3, 1);
     --easeInOut: cubic-bezier(0.7, 0, 0.3, 1);
@@ -35,13 +35,13 @@
 
   .grain {
     position: fixed; inset: 0; pointer-events: none; z-index: 9000;
-    opacity: 0.06; mix-blend-mode: overlay;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    opacity: 0.045; mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
   }
 
   .vignette {
     position: fixed; inset: 0; pointer-events: none; z-index: 8500;
-    background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.06) 100%);
+    background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.15) 100%);
   }
 
   /* ============== LOADER ============== */
@@ -68,7 +68,7 @@
     transform: translateY(0);
   }
   .wordmark-wrap.glow {
-    filter: drop-shadow(0 0 12px rgba(0, 0, 0, 0.18));
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.1));
     animation: wordmark-pulse 4s ease-in-out infinite;
   }
   .wordmark-wrap svg {
@@ -77,8 +77,8 @@
     height: auto;
   }
   @keyframes wordmark-pulse {
-    0%, 100% { filter: drop-shadow(0 0 12px rgba(0, 0, 0, 0.18)); }
-    50%      { filter: drop-shadow(0 0 18px rgba(0, 0, 0, 0.3)); }
+    0%, 100% { filter: drop-shadow(0 4px 12px rgba(0,0,0,0.1)); }
+    50%      { filter: drop-shadow(0 6px 16px rgba(0,0,0,0.15)); }
   }
 
   /* HOUSE STAGE */
@@ -90,12 +90,12 @@
     transition: filter 1.5s ease;
   }
   .logo-stage.glowing {
-    filter: drop-shadow(0 0 18px rgba(0, 0, 0, 0.25)) drop-shadow(0 0 40px rgba(0, 0, 0, 0.1));
+    filter: drop-shadow(0 8px 24px rgba(0,0,0,0.18)) drop-shadow(0 4px 12px rgba(0,0,0,0.12));
     animation: glow-pulse 4s ease-in-out infinite;
   }
   @keyframes glow-pulse {
-    0%, 100% { filter: drop-shadow(0 0 18px rgba(0, 0, 0, 0.25)) drop-shadow(0 0 40px rgba(0, 0, 0, 0.1)); }
-    50%      { filter: drop-shadow(0 0 25px rgba(0, 0, 0, 0.4)) drop-shadow(0 0 60px rgba(0, 0, 0, 0.18)); }
+    0%, 100% { filter: drop-shadow(0 8px 24px rgba(0,0,0,0.18)) drop-shadow(0 4px 12px rgba(0,0,0,0.12)); }
+    50%      { filter: drop-shadow(0 12px 32px rgba(0,0,0,0.22)) drop-shadow(0 6px 16px rgba(0,0,0,0.15)); }
   }
 
   #brick-svg {
@@ -125,8 +125,8 @@
 
   @keyframes brick-place {
     0%   { opacity: 0; transform: scale(0.3); }
-    60%  { opacity: 1; transform: scale(1.1); }
-    100% { opacity: 1; transform: scale(1); }
+    60%  { opacity: 0.5; transform: scale(1.1); }
+    100% { opacity: 0.4; transform: scale(1); }
   }
 
   /* DOOR */
@@ -153,13 +153,13 @@
     position: absolute;
     inset: 0;
     background: var(--brick-fill);
-    border: 2.5px solid var(--gold);
+    border: 2px solid rgba(0,0,0,0.8);
     border-radius: 2px 2px 0 0;
     transform-origin: left center;
     transition: transform 0.7s var(--easeInOut), box-shadow 0.4s ease;
     box-shadow:
-      0 0 0 1px rgba(212,175,55,0.3),
-      0 0 35px rgba(212,175,55,0.4);
+      0 2px 8px rgba(0,0,0,0.2),
+      0 0 0 1px rgba(0,0,0,0.12);
     animation: door-breathe 2.4s ease-in-out infinite;
   }
   .door::before {
@@ -188,8 +188,8 @@
   }
   .door-in-house:hover .door {
     box-shadow:
-      0 0 0 1px var(--gold),
-      0 0 50px rgba(0, 0, 0, 0.3);
+      0 4px 20px rgba(0,0,0,0.35),
+      0 0 0 1px rgba(0,0,0,0.3);
   }
   .door-light {
     position: absolute;
@@ -210,8 +210,8 @@
     transform: scale(1);
   }
   @keyframes door-breathe {
-    0%, 100% { box-shadow: 0 0 0 1px rgba(212,175,55,0.3), 0 0 35px rgba(212,175,55,0.4); }
-    50%      { box-shadow: 0 0 0 1px rgba(212,175,55,0.5), 0 0 55px rgba(212,175,55,0.6); }
+    0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.2), 0 0 0 1px rgba(0,0,0,0.12); }
+    50%      { box-shadow: 0 4px 16px rgba(0,0,0,0.3), 0 0 0 1px rgba(0,0,0,0.22); }
   }
 
   .invitation-text {
@@ -434,7 +434,7 @@
 Created by potrace 1.16, written by Peter Selinger 2001-2019
 </metadata>
 <g transform="translate(0.000000,1156.000000) scale(0.100000,-0.100000)"
-fill="#f5f1ea" stroke="none">
+fill="#0a0a0a" stroke="none">
 <path d="M16240 10740 c-14 -4 -178 -8 -366 -9 -250 -1 -343 -4 -352 -13 -19
 -19 -17 -4301 1 -4317 10 -7 314 -12 1043 -16 1131 -6 1356 -9 1456 -19 117
 -13 108 -50 108 419 0 308 -3 406 -12 411 -16 10 -448 25 -903 31 -198 3 -470
@@ -2177,7 +2177,7 @@ m229 -309 c48 -22 80 -60 94 -112 7 -25 10 -249 8 -641 l-3 -603 -27 -41 c-32
 Created by potrace 1.16, written by Peter Selinger 2001-2019
 </metadata>
 <g transform="translate(0.000000,1156.000000) scale(0.100000,-0.100000)"
-fill="#f5f1ea" stroke="none">
+fill="#0a0a0a" stroke="none">
 <path d="M16240 10740 c-14 -4 -178 -8 -366 -9 -250 -1 -343 -4 -352 -13 -19
 -19 -17 -4301 1 -4317 10 -7 314 -12 1043 -16 1131 -6 1356 -9 1456 -19 117
 -13 108 -50 108 419 0 308 -3 406 -12 411 -16 10 -448 25 -903 31 -198 3 -470
