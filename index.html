@@ -9,14 +9,14 @@
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,400;0,700;0,900;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #ffffff;
+    --bg: #0a0a0a;
     --silhouette-fill: #1c1c1c;
     --brick-fill: #242424;
-    --bone: #0a0a0a;
-    --bone-dim: #5a5a5a;
+    --bone: #f5f1ea;
+    --bone-dim: #9a9490;
     --blood: #b8000c;
-    --gold: #0a0a0a;
-    --gold-warm: #0a0a0a;
+    --gold: #d4af37;
+    --gold-warm: #f5c842;
     --easeOut: cubic-bezier(0.16, 1, 0.3, 1);
     --easeInOut: cubic-bezier(0.7, 0, 0.3, 1);
   }
@@ -35,8 +35,8 @@
 
   .grain {
     position: fixed; inset: 0; pointer-events: none; z-index: 9000;
-    opacity: 0.045; mix-blend-mode: multiply;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    opacity: 0.06; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
   }
 
   .vignette {
@@ -132,11 +132,11 @@
   /* DOOR */
   .door-in-house {
     position: absolute;
-    left: 47%;
-    top: 60%;
+    left: 50%;
+    top: 55%;
     transform: translate(-50%, -50%);
-    width: 56px;
-    height: 92px;
+    width: 75px;
+    height: 120px;
     perspective: 800px;
     cursor: pointer;
     z-index: 10;
@@ -153,13 +153,13 @@
     position: absolute;
     inset: 0;
     background: var(--brick-fill);
-    border: 1.5px solid var(--gold);
+    border: 2.5px solid var(--gold);
     border-radius: 2px 2px 0 0;
     transform-origin: left center;
     transition: transform 0.7s var(--easeInOut), box-shadow 0.4s ease;
     box-shadow:
-      0 0 0 1px rgba(0, 0, 0, 0.07),
-      0 0 30px rgba(0, 0, 0, 0.1);
+      0 0 0 1px rgba(212,175,55,0.3),
+      0 0 35px rgba(212,175,55,0.4);
     animation: door-breathe 2.4s ease-in-out infinite;
   }
   .door::before {
@@ -180,11 +180,11 @@
     position: absolute;
     top: 55%;
     right: 8px;
-    width: 5px;
-    height: 5px;
+    width: 7px;
+    height: 7px;
     background: var(--gold-warm);
     border-radius: 50%;
-    box-shadow: 0 0 8px var(--gold-warm);
+    box-shadow: 0 0 12px var(--gold-warm);
   }
   .door-in-house:hover .door {
     box-shadow:
@@ -210,8 +210,8 @@
     transform: scale(1);
   }
   @keyframes door-breathe {
-    0%, 100% { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.07), 0 0 30px rgba(0, 0, 0, 0.1); }
-    50%      { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15), 0 0 50px rgba(0, 0, 0, 0.2); }
+    0%, 100% { box-shadow: 0 0 0 1px rgba(212,175,55,0.3), 0 0 35px rgba(212,175,55,0.4); }
+    50%      { box-shadow: 0 0 0 1px rgba(212,175,55,0.5), 0 0 55px rgba(212,175,55,0.6); }
   }
 
   .invitation-text {
@@ -413,7 +413,7 @@
     .logo-stage { width: 80vw; }
     .wordmark-wrap { width: 65vw; }
     #loader { gap: 1.2rem; padding: 1.5rem; }
-    .door-in-house { width: 48px; height: 78px; }
+    .door-in-house { width: 60px; height: 96px; }
   }
 </style>
 </head>
