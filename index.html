@@ -10,7 +10,8 @@
 <style>
   :root {
     --bg: #ffffff;
-    --brick-fill: #1a1a1a;
+    --silhouette-fill: #1c1c1c;
+    --brick-fill: #242424;
     --bone: #0a0a0a;
     --bone-dim: #5a5a5a;
     --blood: #b8000c;
@@ -83,9 +84,8 @@
   /* HOUSE STAGE */
   .logo-stage {
     width: min(48vw, 440px);
-    aspect-ratio: 340 / 320;
+    aspect-ratio: 340 / 260;
     position: relative;
-    overflow: visible;
     filter: drop-shadow(0 0 0px rgba(0, 0, 0, 0));
     transition: filter 1.5s ease;
   }
@@ -100,7 +100,15 @@
 
   #brick-svg {
     width: 100%; height: 100%;
-    overflow: visible; display: block; shape-rendering: auto;
+    display: block;
+  }
+
+  .silhouette-base {
+    opacity: 0;
+    transition: opacity 0.6s ease-out;
+  }
+  #brick-svg.building .silhouette-base {
+    opacity: 1;
   }
 
   .brick {
@@ -317,7 +325,7 @@
 
   .hero-mark {
     width: min(22vw, 180px);
-    aspect-ratio: 340 / 320;
+    aspect-ratio: 340 / 260;
     opacity: 0;
     transition: opacity 1.4s ease 0.5s;
     filter: drop-shadow(0 0 12px rgba(0, 0, 0, 0.15));
@@ -608,13 +616,19 @@ m229 -309 c48 -22 80 -60 94 -112 7 -25 10 -249 8 -641 l-3 -603 -27 -41 c-32
 
   <!-- HOUSE -->
   <div class="logo-stage" id="logoStage">
-    <svg id="brick-svg" viewBox="180 95 340 320" preserveAspectRatio="xMidYMid meet" overflow="visible" xmlns="http://www.w3.org/2000/svg">
+    <svg id="brick-svg" viewBox="180 135 340 260" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <clipPath id="house-mask" clipPathUnits="userSpaceOnUse">
           <path d="m491.09 173.95l-149.51-63.37-156.22 63.22 5.98 14.78 150.1-60.74 143.42 60.79z"/>
-      <path d="m379.03 193.24v19.54h-84.41v-19.54h-89.07v153.7h89.07v-20.15h84.41v20.15h91.86v-153.7z"/>
+          <path d="m379.03 193.24v19.54h-84.41v-19.54h-89.07v153.7h89.07v-20.15h84.41v20.15h91.86v-153.7z"/>
         </clipPath>
       </defs>
+      <!-- LAYER 1: smooth silhouette base -->
+      <g class="silhouette-base">
+        <path d="m491.09 173.95l-149.51-63.37-156.22 63.22 5.98 14.78 150.1-60.74 143.42 60.79z" fill="var(--silhouette-fill)"/>
+        <path d="m379.03 193.24v19.54h-84.41v-19.54h-89.07v153.7h89.07v-20.15h84.41v20.15h91.86v-153.7z" fill="var(--silhouette-fill)"/>
+      </g>
+      <!-- LAYER 2: brick texture clipped to house shape -->
       <g clip-path="url(#house-mask)">
         <rect class="brick" x="340" y="111" width="9.2" height="9.2" style="animation-delay:0ms"/>
         <rect class="brick" x="316" y="119" width="9.2" height="9.2" style="animation-delay:5ms"/>
@@ -2343,13 +2357,19 @@ m229 -309 c48 -22 80 -60 94 -112 7 -25 10 -249 8 -641 l-3 -603 -27 -41 c-32
 
   </div>
   <div class="hero-mark">
-    <svg id="hero-logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="180 95 340 320" preserveAspectRatio="xMidYMid meet" overflow="visible">
+    <svg id="hero-logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="180 135 340 260" preserveAspectRatio="xMidYMid meet">
   <defs>
     <clipPath id="hero-house-mask" clipPathUnits="userSpaceOnUse">
       <path d="m491.09 173.95l-149.51-63.37-156.22 63.22 5.98 14.78 150.1-60.74 143.42 60.79z"/>
       <path d="m379.03 193.24v19.54h-84.41v-19.54h-89.07v153.7h89.07v-20.15h84.41v20.15h91.86v-153.7z"/>
     </clipPath>
   </defs>
+  <!-- LAYER 1: smooth silhouette base (static, fully opaque) -->
+  <g>
+    <path d="m491.09 173.95l-149.51-63.37-156.22 63.22 5.98 14.78 150.1-60.74 143.42 60.79z" fill="#1c1c1c"/>
+    <path d="m379.03 193.24v19.54h-84.41v-19.54h-89.07v153.7h89.07v-20.15h84.41v20.15h91.86v-153.7z" fill="#1c1c1c"/>
+  </g>
+  <!-- LAYER 2: brick texture -->
   <g clip-path="url(#hero-house-mask)">
     <rect x="340" y="111" width="9.2" height="9.2" fill="#1c1c1c"/>
     <rect x="316" y="119" width="9.2" height="9.2" fill="#1c1c1c"/><rect x="324" y="119" width="9.2" height="9.2" fill="#1c1c1c"/><rect x="332" y="119" width="9.2" height="9.2" fill="#1c1c1c"/><rect x="340" y="119" width="9.2" height="9.2" fill="#1c1c1c"/><rect x="348" y="119" width="9.2" height="9.2" fill="#1c1c1c"/><rect x="356" y="119" width="9.2" height="9.2" fill="#1c1c1c"/>
