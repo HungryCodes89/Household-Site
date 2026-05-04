@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HOUSEHOLD — Enter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,300;0,6..96,400;1,6..96,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:       #0a0908;
+      --fg:       #f0ece4;
+      --dim:      rgba(240, 236, 228, 0.28);
+      --blood:    #b8000c;
+      --gold:     #f5c842;
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-io:  cubic-bezier(0.7, 0, 0.3, 1);
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      cursor: none;
+    }
+    body.unlocked { overflow-y: auto; cursor: auto; }
+
+    /* ─── Custom cursor ─────────────────────────────────── */
+    #cur-dot {
+      position: fixed; z-index: 99999;
+      width: 5px; height: 5px;
+      background: var(--fg);
+      border-radius: 50%;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      transition: width .18s ease, height .18s ease, opacity .2s ease;
+      mix-blend-mode: difference;
+    }
+    #cur-ring {
+      position: fixed; z-index: 99998;
+      width: 30px; height: 30px;
+      border: 1px solid rgba(240,236,228,.35);
+      border-radius: 50%;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+    }
+    #cur-dot.big  { width: 26px; height: 26px; }
+
+    /* ─── Film grain ────────────────────────────────────── */
+    .grain {
+      position: fixed; inset: 0;
+      pointer-events: none; z-index: 9600;
+      opacity: .042;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+      mix-blend-mode: overlay;
+    }
+
+    /* ─── Vignette ──────────────────────────────────────── */
+    .vignette {
+      position: fixed; inset: 0;
+      pointer-events: none; z-index: 9500;
+      background: radial-gradient(ellipse at center, transparent 52%, rgba(0,0,0,.7) 100%);
+    }
+
+    /* ─── Cinematic bars ────────────────────────────────── */
+    .bar {
+      position: fixed; left: 0; right: 0;
+      height: 8vh; min-height: 44px;
+      background: #000;
+      pointer-events: none; z-index: 9300;
+    }
+    #bar-top    { top: 0;    transform: translateY(-100%); transition: transform .9s var(--ease-out) .05s; }
+    #bar-bottom { bottom: 0; transform: translateY(100%);  transition: transform .9s var(--ease-out) .05s; }
+    body.cinematic #bar-top    { transform: translateY(0); }
+    body.cinematic #bar-bottom { transform: translateY(0); }
+    body.bars-out #bar-top    { transform: translateY(-100%); }
+    body.bars-out #bar-bottom { transform: translateY(100%);  }
+
+    /* ─── Flash overlay ─────────────────────────────────── */
+    #flash {
+      position: fixed; inset: 0; z-index: 9900;
+      background: #fff;
+      opacity: 0; pointer-events: none;
+      transition: opacity .18s ease;
+    }
+    #flash.on { opacity: .96; }
+
+    /* ─── Loader ────────────────────────────────────────── */
+    #loader {
+      position: fixed; inset: 0; z-index: 9200;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 0;
+      background: var(--bg);
+      transition: opacity .7s ease, visibility .7s ease;
+    }
+    #loader.exit { opacity: 0; visibility: hidden; pointer-events: none; }
+
+    /* Subtle ambient light that grows */
+    #ambient {
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 70% 55% at 50% 42%,
+                    rgba(240,236,228,.028) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 2.4s ease;
+      pointer-events: none;
+    }
+    #ambient.on { opacity: 1; }
+
+    /* ─── Logo block ────────────────────────────────────── */
+    #logo-block {
+      position: relative;
+      display: flex; flex-direction: column;
+      align-items: center;
+    }
+
+    /* Scan-line sweeper (thin bright line) */
+    #scan-line {
+      position: absolute; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(to right, transparent 0%, rgba(240,236,228,.7) 30%, rgba(240,236,228,.9) 50%, rgba(240,236,228,.7) 70%, transparent 100%);
+      box-shadow: 0 0 10px rgba(240,236,228,.4), 0 0 3px rgba(240,236,228,.6);
+      top: 0;
+      opacity: 0;
+      z-index: 5;
+      will-change: top;
+    }
+
+    /* HH logo (PNG, dark on white → screen blend) */
+    #hh-logo {
+      width: min(38vw, 300px);
+      height: auto;
+      display: block;
+      filter: invert(1) brightness(.88);
+      mix-blend-mode: screen;
+      clip-path: inset(100% 0 0 0); /* starts fully clipped */
+      will-change: clip-path;
+      transition: transform .5s ease;
+      user-select: none; -webkit-user-drag: none;
+    }
+
+    /* Wordmark wrapper — overflow:hidden clips the rise animation */
+    #wm-wrap {
+      overflow: hidden;
+      height: min(14vw, 110px);
+      display: flex; align-items: flex-end; justify-content: center;
+      margin-top: min(3.5vw, 28px);
+    }
+    #wordmark {
+      width: min(46vw, 360px);
+      height: auto;
+      display: block;
+      mix-blend-mode: screen;
+      transform: translateY(110%);
+      will-change: transform;
+      user-select: none; -webkit-user-drag: none;
+    }
+
+    /* ─── Progress bar ──────────────────────────────────── */
+    #progress-wrap {
+      position: fixed;
+      bottom: calc(8vh + 22px);
+      left: 50%; transform: translateX(-50%);
+      width: min(260px, 55vw);
+      display: flex; flex-direction: column;
+      align-items: center; gap: 11px;
+      opacity: 0;
+      transition: opacity .5s ease;
+      z-index: 9400;
+    }
+    #progress-wrap.show { opacity: 1; }
+    #progress-track {
+      width: 100%; height: 1px;
+      background: rgba(240,236,228,.1);
+      position: relative; overflow: hidden;
+    }
+    #progress-bar {
+      position: absolute; inset: 0;
+      background: var(--fg);
+      transform-origin: left;
+      transform: scaleX(0);
+      transition: transform .08s linear;
+    }
+    #progress-bar::after {
+      content: '';
+      position: absolute; right: 0; top: -1px;
+      width: 30px; height: 3px;
+      background: linear-gradient(to right, rgba(240,236,228,.8), transparent);
+      filter: blur(1px);
+    }
+    #progress-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8px; font-weight: 300;
+      letter-spacing: .28em;
+      color: var(--dim);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ─── Enter prompt ──────────────────────────────────── */
+    #enter-prompt {
+      position: fixed;
+      bottom: calc(8vh + 68px);
+      left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column;
+      align-items: center; gap: 8px;
+      opacity: 0;
+      transition: opacity .8s ease;
+      z-index: 9400;
+      cursor: none;
+      white-space: nowrap;
+    }
+    #enter-prompt.show { opacity: 1; }
+    #enter-headline {
+      font-family: 'Bodoni Moda', serif;
+      font-style: italic; font-weight: 300;
+      font-size: clamp(1rem, 2vw, 1.5rem);
+      letter-spacing: .45em;
+      text-transform: uppercase;
+      color: var(--fg);
+    }
+    #enter-sub {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .58rem; font-weight: 300;
+      letter-spacing: .38em; text-transform: uppercase;
+      color: var(--dim);
+    }
+    #enter-sub span { animation: blink 1.6s ease-in-out infinite; }
+    @keyframes blink {
+      0%,100% { opacity: .3; }
+      50%      { opacity: 1; }
+    }
+
+    /* ─── Skip button ───────────────────────────────────── */
+    #skip-btn {
+      position: fixed;
+      bottom: calc(8vh + 16px); right: 2.2rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .58rem; font-weight: 300;
+      letter-spacing: .3em; text-transform: uppercase;
+      color: var(--dim);
+      background: none;
+      border: 1px solid rgba(240,236,228,.1);
+      padding: .48rem .76rem;
+      cursor: none;
+      opacity: 0;
+      transition: color .2s, border-color .2s, opacity .35s;
+      z-index: 9400;
+    }
+    #skip-btn.show { opacity: 1; }
+    #skip-btn:hover { color: var(--fg); border-color: rgba(240,236,228,.35); }
+
+    /* ─── Site content (shown after enter) ─────────────── */
+    #site {
+      min-height: 100vh;
+      background: var(--bg);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 2rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1.1s ease .3s;
+    }
+    #site.show { opacity: 1; pointer-events: auto; }
+    .site-logo {
+      width: min(26vw, 220px);
+      filter: invert(1) brightness(.88);
+      mix-blend-mode: screen;
+      user-select: none;
+    }
+    .site-wm {
+      width: min(40vw, 320px);
+      mix-blend-mode: screen;
+      user-select: none;
+    }
+
+    /* ─── Mobile ────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      #hh-logo    { width: 68vw; }
+      #wordmark   { width: 76vw; }
+      #wm-wrap    { height: 20vw; margin-top: 5vw; }
+      #enter-headline { font-size: .95rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Cursor -->
+  <div id="cur-dot"></div>
+  <div id="cur-ring"></div>
+
+  <!-- Overlays -->
+  <div class="grain"></div>
+  <div class="vignette"></div>
+
+  <!-- Cinematic bars -->
+  <div class="bar" id="bar-top"></div>
+  <div class="bar" id="bar-bottom"></div>
+
+  <!-- Flash -->
+  <div id="flash"></div>
+
+  <!-- ═══ LOADER ═══ -->
+  <div id="loader">
+    <div id="ambient"></div>
+
+    <div id="logo-block">
+      <!-- Scan line -->
+      <div id="scan-line"></div>
+
+      <!-- HH mark -->
+      <img id="hh-logo" src="HH wings logo (2).png" alt="HH" draggable="false">
+
+      <!-- Wordmark rise -->
+      <div id="wm-wrap">
+        <img id="wordmark" src="household-wordmark.jpg" alt="HOUSEHOLD EST. 2011" draggable="false">
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div id="progress-wrap">
+    <div id="progress-track">
+      <div id="progress-bar"></div>
+    </div>
+    <div id="progress-num">000</div>
+  </div>
+
+  <!-- Enter prompt -->
+  <div id="enter-prompt">
+    <div id="enter-headline">Enter the Household</div>
+    <div id="enter-sub"><span>[ click anywhere ]</span></div>
+  </div>
+
+  <!-- Skip -->
+  <button id="skip-btn">[ Skip ]</button>
+
+  <!-- ═══ SITE CONTENT ═══ -->
+  <div id="site">
+    <img class="site-logo" src="HH wings logo (2).png" alt="HH" draggable="false">
+    <img class="site-wm"   src="household-wordmark.jpg" alt="HOUSEHOLD EST. 2011" draggable="false">
+  </div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ── Session skip ─────────────────────────── */
+  if (sessionStorage.getItem('hh_v2') === '1') {
+    document.getElementById('loader').style.display      = 'none';
+    document.getElementById('progress-wrap').style.display = 'none';
+    document.getElementById('enter-prompt').style.display  = 'none';
+    document.getElementById('skip-btn').style.display      = 'none';
+    document.getElementById('site').classList.add('show');
+    document.body.classList.add('unlocked');
+    return;
+  }
+
+  /* ── DOM refs ─────────────────────────────── */
+  const logo        = document.getElementById('hh-logo');
+  const wm          = document.getElementById('wordmark');
+  const scanLine    = document.getElementById('scan-line');
+  const ambient     = document.getElementById('ambient');
+  const progressWrap= document.getElementById('progress-wrap');
+  const progressBar = document.getElementById('progress-bar');
+  const progressNum = document.getElementById('progress-num');
+  const enterPrompt = document.getElementById('enter-prompt');
+  const skipBtn     = document.getElementById('skip-btn');
+  const loader      = document.getElementById('loader');
+  const flash       = document.getElementById('flash');
+  const site        = document.getElementById('site');
+  const curDot      = document.getElementById('cur-dot');
+  const curRing     = document.getElementById('cur-ring');
+
+  /* ── Cursor ───────────────────────────────── */
+  let cx = window.innerWidth/2, cy = window.innerHeight/2;
+  let rx = cx, ry = cy;
+
+  document.addEventListener('mousemove', e => { cx = e.clientX; cy = e.clientY; });
+
+  (function moveCursor() {
+    curDot.style.left = cx + 'px';
+    curDot.style.top  = cy + 'px';
+    rx += (cx - rx) * .14;
+    ry += (cy - ry) * .14;
+    curRing.style.left = rx + 'px';
+    curRing.style.top  = ry + 'px';
+    requestAnimationFrame(moveCursor);
+  })();
+
+  /* ── Logo parallax on mouse ───────────────── */
+  const logoBlock = document.getElementById('logo-block');
+  document.addEventListener('mousemove', e => {
+    const tx = (e.clientX / window.innerWidth  - .5) * 14;
+    const ty = (e.clientY / window.innerHeight - .5) * 8;
+    logoBlock.style.transform = `perspective(700px) rotateY(${tx}deg) rotateX(${-ty}deg)`;
+  });
+
+  /* ── Hover states for cursor ──────────────── */
+  [enterPrompt, skipBtn].forEach(el => {
+    el.addEventListener('mouseenter', () => curDot.classList.add('big'));
+    el.addEventListener('mouseleave', () => curDot.classList.remove('big'));
+  });
+
+  /* ── Scan reveal animation ────────────────── */
+  const SCAN_DUR    = 1200;  // ms for scan line to sweep
+  const SCAN_DELAY  = 320;   // ms before scan starts
+  const logo_H      = () => logo.getBoundingClientRect().height || logo.offsetHeight || 260;
+
+  function runScanReveal() {
+    /* Show scan line at top */
+    scanLine.style.top     = '0px';
+    scanLine.style.opacity = '1';
+    scanLine.style.transition = 'none';
+
+    /* Animate scan line downward + clip-path follows */
+    const start = performance.now();
+    const h     = logo.offsetHeight;
+
+    function tick(now) {
+      const t   = Math.min((now - start) / SCAN_DUR, 1);
+      const eased = t < .5
+                  ? 2*t*t
+                  : 1 - Math.pow(-2*t + 2, 2) / 2; // ease in-out quad
+
+      const pct   = eased * 100;
+      const px    = eased * h;
+
+      /* Scan line position */
+      scanLine.style.top = px + 'px';
+
+      /* Logo clip: reveal top→bottom */
+      logo.style.clipPath = `inset(0 0 ${100 - pct}% 0)`;
+
+      if (t < 1) {
+        requestAnimationFrame(tick);
+      } else {
+        /* Sweep complete */
+        scanLine.style.transition = 'opacity .4s ease';
+        scanLine.style.opacity    = '0';
+        logo.style.clipPath       = 'inset(0 0 0% 0)';
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+
+  /* ── Wordmark rise ────────────────────────── */
+  function riseWordmark(delay) {
+    setTimeout(() => {
+      wm.style.transition = `transform 1.1s cubic-bezier(0.16, 1, 0.3, 1)`;
+      wm.style.transform  = 'translateY(0)';
+    }, delay);
+  }
+
+  /* ── Progress ─────────────────────────────── */
+  const PROG_START = 700;   // ms when progress begins
+  const PROG_DUR   = 2100;  // ms to fill 0→100
+
+  let progT0 = null;
+  let progDone = false;
+
+  function easeProgress(t) {
+    /* Fast start, slow mid, snap end */
+    if (t < .45) return t * 1.56;
+    if (t < .85) return .70 + (t - .45) * (.22 / .40);
+    return .92 + (t - .85) * (.08 / .15);
+  }
+
+  function tickProgress(ts) {
+    if (!progT0) progT0 = ts;
+    const t   = Math.min((ts - progT0) / PROG_DUR, 1);
+    const pct = Math.min(easeProgress(t) * 100, 100);
+    progressBar.style.transform = `scaleX(${pct / 100})`;
+    progressNum.textContent = String(Math.floor(pct)).padStart(3, '0');
+    if (t < 1) {
+      requestAnimationFrame(tickProgress);
+    } else {
+      progressBar.style.transform = 'scaleX(1)';
+      progressNum.textContent = '100';
+      progDone = true;
+      showEnter();
+    }
+  }
+
+  /* ── Show enter prompt ────────────────────── */
+  function showEnter() {
+    enterPrompt.classList.add('show');
+    enterPrompt.addEventListener('click', enterSite, { once: true });
+    document.addEventListener('click', enterSite, { once: true });
+  }
+
+  /* ── Enter site ───────────────────────────── */
+  let entering = false;
+  function enterSite() {
+    if (entering || !progDone) return;
+    entering = true;
+
+    /* Flash */
+    flash.classList.add('on');
+    setTimeout(() => {
+      flash.classList.remove('on');
+      loader.classList.add('exit');
+      progressWrap.style.opacity    = '0';
+      progressWrap.style.transition = 'opacity .4s ease';
+      enterPrompt.style.opacity     = '0';
+      enterPrompt.style.transition  = 'opacity .4s ease';
+      skipBtn.style.display         = 'none';
+
+      /* Bars retract */
+      document.body.classList.remove('cinematic');
+      document.body.classList.add('bars-out');
+      document.body.classList.add('unlocked');
+
+      /* Show site */
+      site.classList.add('show');
+      sessionStorage.setItem('hh_v2', '1');
+    }, 230);
+  }
+
+  /* ── Skip ─────────────────────────────────── */
+  skipBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    progDone = true;
+    progressBar.style.transform = 'scaleX(1)';
+    progressNum.textContent = '100';
+    enterSite();
+  });
+
+  /* ── Reduced motion fallback ──────────────── */
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ── Main sequence ────────────────────────── */
+  function start() {
+    /* Cinematic bars in */
+    document.body.classList.add('cinematic');
+
+    if (reducedMotion) {
+      logo.style.clipPath = 'inset(0 0 0% 0)';
+      wm.style.transform  = 'translateY(0)';
+      ambient.classList.add('on');
+      progressWrap.classList.add('show');
+      progDone = true;
+      progressBar.style.transform = 'scaleX(1)';
+      progressNum.textContent = '100';
+      showEnter();
+      return;
+    }
+
+    /* Scan reveal */
+    setTimeout(runScanReveal, SCAN_DELAY);
+
+    /* Wordmark rises slightly after scan starts */
+    riseWordmark(SCAN_DELAY + SCAN_DUR * .55);
+
+    /* Ambient glow */
+    setTimeout(() => ambient.classList.add('on'), SCAN_DELAY + 400);
+
+    /* Progress bar */
+    setTimeout(() => {
+      progressWrap.classList.add('show');
+      requestAnimationFrame(tickProgress);
+    }, PROG_START);
+
+    /* Skip button */
+    setTimeout(() => skipBtn.classList.add('show'), 600);
+  }
+
+  /* Small defer so fonts/images start loading */
+  if (document.readyState === 'complete') {
+    setTimeout(start, 50);
+  } else {
+    window.addEventListener('load', () => setTimeout(start, 50));
+  }
+
+})();
+</script>
+</body>
+</html>
