@@ -123,10 +123,14 @@ const enterHousehold = useCallback(() => {
     if (svgCrossbar) svgCrossbar.style.opacity = '0'
 
     // 1. HTML overlay swings open on left hinge — CSS transition
+    // Double-rAF: first frame paints the element at opacity 1,
+    // second frame triggers the transition (single rAF isn't enough
+    // for a previously-invisible element to enter the render pipeline)
     overlay.style.opacity = '1'
-    // rAF ensures opacity reflow before transform triggers the transition
     requestAnimationFrame(() => {
-      overlay.style.transform = 'perspective(1200px) rotateY(-105deg)'
+      requestAnimationFrame(() => {
+        overlay.style.transform = 'perspective(1200px) rotateY(-105deg)'
+      })
     })
 
     // 2. Black void expands from where the crossbar is on screen
