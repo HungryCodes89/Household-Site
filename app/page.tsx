@@ -102,11 +102,11 @@ export default function LandingPage() {
     if (enteringRef.current) return
     enteringRef.current = true
 
-    const house   = document.getElementById('houseBlock')
-    const crossbar = document.querySelector('.crossbar') as SVGRectElement | null
-    const wash    = washRef.current
+    const house         = document.getElementById('houseBlock')
+    const crossbarGroup = document.querySelector('.crossbar-group') as SVGGElement | null
+    const wash          = washRef.current
 
-    if (!house || !crossbar || !wash) return
+    if (!house || !crossbarGroup || !wash) return
 
     // Fade out all chrome so attention is on the door swing
     document.querySelectorAll<HTMLElement>(
@@ -117,7 +117,7 @@ export default function LandingPage() {
     })
 
     // 1. Crossbar swings open on its left hinge
-    crossbar.animate(
+    crossbarGroup.animate(
       [
         { transform: 'rotateY(0deg)' },
         { transform: 'rotateY(-105deg)' },
@@ -245,7 +245,9 @@ export default function LandingPage() {
 
             <rect className="pillar-left"  x="30"  y="100" width="116" height="170" fill="#0a0a0a" clipPath="url(#cp-pl)" />
             <rect className="pillar-right" x="254" y="100" width="116" height="170" fill="#0a0a0a" clipPath="url(#cp-pr)" />
-            <rect className="crossbar"     x="144" y="118" width="112" height="130" fill="#0a0a0a" clipPath="url(#cp-cb)" />
+            <g className="crossbar-group">
+              <rect className="crossbar"   x="144" y="118" width="112" height="130" fill="#0a0a0a" clipPath="url(#cp-cb)" />
+            </g>
             <path className="roof"         d={ROOF}        fill="#0a0a0a" />
           </svg>
         </div>

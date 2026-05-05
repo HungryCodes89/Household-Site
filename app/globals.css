@@ -153,6 +153,8 @@ body {
   transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1), filter 0.6s;
   animation: houseDropShadow 0.8s 4.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   perspective: 1200px;
+  perspective-origin: center;
+  transform-style: preserve-3d;
 }
 @keyframes houseDropShadow {
   to {
@@ -168,7 +170,6 @@ body {
   height: auto;
   display: block;
   overflow: visible;
-  transform-style: preserve-3d;
 }
 
 /* draft measurement marks */
@@ -197,10 +198,9 @@ body {
   shape-rendering: crispEdges;
 }
 
-/* Crossbar doubles as the door in upgrade 3 — hinge prep */
-.crossbar {
-  transform-origin: 145px 183px;
-  transform-box: fill-box;
+/* Crossbar-group is the hinge wrapper; crossbar rect stays for clip animation */
+.crossbar-group {
+  transform-origin: 144px 183px; /* SVG viewBox coords: left edge x=144, vertical center y=183 */
 }
 
 /* Roof drops in with overshoot — CSS animation, no clip needed */
