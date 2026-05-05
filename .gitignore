@@ -1,3 +1,21 @@
+# dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+
+# Vercel
 .vercel
-.next
-node_modules
+
+# env files — never commit secrets
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+
+# OS
+.DS_Store
+Thumbs.db
