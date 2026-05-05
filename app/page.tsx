@@ -123,11 +123,12 @@ const enterHousehold = useCallback(() => {
     if (svgCrossbar) svgCrossbar.style.opacity = '0'
     overlay.style.opacity = '1'
 
-    // 1. HTML overlay swings open on left hinge — true 3D rotation
+    // 1. HTML overlay swings open on left hinge
+    // perspective() inline — bypasses CSS perspective/filter isolation on parent
     overlay.animate(
       [
-        { transform: 'rotateY(0deg)' },
-        { transform: 'rotateY(-105deg)' },
+        { transform: 'perspective(1200px) rotateY(0deg)' },
+        { transform: 'perspective(1200px) rotateY(-105deg)' },
       ],
       { duration: 800, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'forwards' },
     )
