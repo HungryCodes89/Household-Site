@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HOUSEHOLD — Enter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,300;1,6..96,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:  #0f0e0d;
+      --fg:  #f0ece4;
+      --dim: rgba(240,236,228,.3);
+      --gold: #f5c842;
+      --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* grain overlay */
+    .grain {
+      position: fixed; inset: 0; z-index: 800;
+      pointer-events: none; opacity: .04;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+      mix-blend-mode: overlay;
+    }
+
+    /* vignette */
+    .vig {
+      position: fixed; inset: 0; z-index: 700;
+      pointer-events: none;
+      background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,.8) 100%);
+    }
+
+    /* cinematic bars */
+    .bar {
+      position: fixed; left: 0; right: 0;
+      height: 9vh; min-height: 48px;
+      background: #000; z-index: 600;
+      pointer-events: none;
+    }
+    #bt { top: 0;    transform: translateY(-100%); transition: transform .85s var(--ease) .1s; }
+    #bb { bottom: 0; transform: translateY(100%);  transition: transform .85s var(--ease) .1s; }
+    .go #bt { transform: translateY(0); }
+    .go #bb { transform: translateY(0); }
+    .bye #bt { transform: translateY(-100%); }
+    .bye #bb { transform: translateY(100%); }
+
+    /* white flash */
+    #flash {
+      position: fixed; inset: 0; z-index: 999;
+      background: #fff; opacity: 0;
+      pointer-events: none; transition: opacity .15s ease;
+    }
+    #flash.on { opacity: .95; }
+
+    /* loader wrapper */
+    #loader {
+      position: fixed; inset: 0; z-index: 500;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: var(--bg);
+      transition: opacity .7s ease;
+    }
+    #loader.out { opacity: 0; pointer-events: none; }
+
+    /* soft ambient glow behind logo */
+    #glow {
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 60% 45% at 50% 46%,
+                    rgba(240,236,228,.022) 0%, transparent 70%);
+      opacity: 0; transition: opacity 3s ease;
+      pointer-events: none;
+    }
+    #glow.on { opacity: 1; }
+
+    /* ── logo stack ── */
+    #stack {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 0;
+      will-change: transform;
+    }
+
+    /* HH mark */
+    #hh-box {
+      position: relative;
+      width: min(34vw, 260px);
+    }
+
+    /* scan line that sweeps downward */
+    #scan {
+      position: absolute;
+      left: -8%; right: -8%;
+      height: 1px;
+      background: linear-gradient(to right,
+        transparent 0%, rgba(240,236,228,.55) 25%,
+        rgba(240,236,228,.9) 50%,
+        rgba(240,236,228,.55) 75%, transparent 100%);
+      box-shadow: 0 0 10px rgba(240,236,228,.4), 0 0 3px rgba(240,236,228,.7);
+      top: 0; z-index: 10; opacity: 0;
+      pointer-events: none;
+    }
+
+    #hh-img {
+      display: block; width: 100%; height: auto;
+      /* invert: dark mark on white → white mark on black */
+      filter: invert(1) brightness(.88);
+      /* start fully clipped from bottom (nothing visible) */
+      clip-path: inset(0 0 100% 0);
+      user-select: none; -webkit-user-drag: none;
+    }
+
+    /* wordmark */
+    #wm-box {
+      overflow: hidden;
+      width: min(42vw, 320px);
+      /* height clips the rise animation */
+      height: min(13vw, 98px);
+      margin-top: min(2.5vw, 20px);
+      display: flex; align-items: flex-end; justify-content: center;
+    }
+    #wm-img {
+      display: block; width: 100%; height: auto;
+      /* wordmark is already white-on-dark — show as-is */
+      transform: translateY(115%);
+      will-change: transform;
+      user-select: none; -webkit-user-drag: none;
+    }
+
+    /* ── progress ── */
+    #prog {
+      position: fixed;
+      bottom: calc(9vh + 22px);
+      left: 50%; transform: translateX(-50%);
+      width: min(230px, 52vw);
+      display: flex; flex-direction: column;
+      align-items: center; gap: 11px;
+      opacity: 0; transition: opacity .5s ease;
+      z-index: 550;
+    }
+    #prog.on { opacity: 1; }
+
+    #track {
+      width: 100%; height: 1px;
+      background: rgba(240,236,228,.08);
+      overflow: hidden; position: relative;
+    }
+    #fill {
+      position: absolute; inset: 0;
+      background: var(--fg);
+      transform-origin: left; transform: scaleX(0);
+      transition: transform .06s linear;
+    }
+    #fill::after {
+      content: '';
+      position: absolute; right: 0; top: -1px;
+      width: 24px; height: 3px;
+      background: linear-gradient(to right, rgba(240,236,228,.7), transparent);
+      filter: blur(1px);
+    }
+    #num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8px; font-weight: 300;
+      letter-spacing: .26em;
+      color: var(--dim);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ── enter prompt ── */
+    #enter {
+      position: fixed;
+      bottom: calc(9vh + 76px);
+      left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column;
+      align-items: center; gap: 9px;
+      opacity: 0; transition: opacity .9s ease;
+      cursor: pointer; z-index: 550;
+      white-space: nowrap;
+    }
+    #enter.on { opacity: 1; }
+    #e1 {
+      font-family: 'Bodoni Moda', serif;
+      font-style: italic; font-weight: 300;
+      font-size: clamp(.95rem, 1.8vw, 1.4rem);
+      letter-spacing: .44em; text-transform: uppercase;
+      color: var(--fg);
+    }
+    #e2 {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .56rem; font-weight: 300;
+      letter-spacing: .36em; text-transform: uppercase;
+      color: var(--dim);
+    }
+    #e2 span { animation: blink 1.7s ease-in-out infinite; }
+    @keyframes blink { 0%,100%{opacity:.25;} 50%{opacity:1;} }
+
+    /* skip */
+    #skip {
+      position: fixed;
+      bottom: calc(9vh + 14px); right: 2rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .56rem; font-weight: 300;
+      letter-spacing: .28em; text-transform: uppercase;
+      color: var(--dim);
+      background: none; border: 1px solid rgba(240,236,228,.1);
+      padding: .45rem .7rem; cursor: pointer;
+      opacity: 0; transition: color .2s, border-color .2s, opacity .3s;
+      z-index: 550;
+    }
+    #skip.on { opacity: 1; }
+    #skip:hover { color: var(--fg); border-color: rgba(240,236,228,.3); }
+
+    /* responsive */
+    @media (max-width: 600px) {
+      #hh-box { width: 62vw; }
+      #wm-box { width: 74vw; height: 18vw; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="grain"></div>
+  <div class="vig"></div>
+  <div class="bar" id="bt"></div>
+  <div class="bar" id="bb"></div>
+  <div id="flash"></div>
+
+  <div id="loader">
+    <div id="glow"></div>
+
+    <div id="stack">
+      <div id="hh-box">
+        <div id="scan"></div>
+        <img id="hh-img" src="hh-logo.png" alt="HH">
+      </div>
+      <div id="wm-box">
+        <img id="wm-img" src="household-wordmark.jpg" alt="HOUSEHOLD EST. 2011">
+      </div>
+    </div>
+  </div>
+
+  <div id="prog">
+    <div id="track"><div id="fill"></div></div>
+    <div id="num">000</div>
+  </div>
+
+  <div id="enter">
+    <div id="e1">Enter the Household</div>
+    <div id="e2"><span>[ click anywhere ]</span></div>
+  </div>
+
+  <button id="skip">[ Skip ]</button>
+
+<script>
+(function () {
+
+  var hhImg  = document.getElementById('hh-img');
+  var wmImg  = document.getElementById('wm-img');
+  var scan   = document.getElementById('scan');
+  var glow   = document.getElementById('glow');
+  var prog   = document.getElementById('prog');
+  var fill   = document.getElementById('fill');
+  var num    = document.getElementById('num');
+  var enter  = document.getElementById('enter');
+  var skip   = document.getElementById('skip');
+  var loader = document.getElementById('loader');
+  var flash  = document.getElementById('flash');
+  var body   = document.body;
+  var stack  = document.getElementById('stack');
+
+  /* ── parallax ── */
+  document.addEventListener('mousemove', function (e) {
+    var tx = (e.clientX / window.innerWidth  - .5) * 14;
+    var ty = (e.clientY / window.innerHeight - .5) * 8;
+    stack.style.transform = 'perspective(600px) rotateY(' + tx + 'deg) rotateX(' + (-ty) + 'deg)';
+  });
+
+  /* ── scan + clip reveal ─────────────────────────────────
+     clip-path: inset(top right bottom left)
+     We start clipped from the bottom: inset(0 0 100% 0)
+     The scan line sits just ahead of the revealed portion.
+     As pct goes 0→100, bottom clip shrinks 100%→0%
+     revealing the logo top-down.
+  ─────────────────────────────────────────────────────── */
+  function runReveal() {
+    var h = hhImg.offsetHeight || 260;
+
+    scan.style.opacity    = '1';
+    scan.style.top        = '-1px';
+    scan.style.transition = 'none';
+
+    var dur = 1300;
+    var t0  = null;
+
+    function tick(now) {
+      if (!t0) t0 = now;
+      var t = Math.min((now - t0) / dur, 1);
+      /* ease-in-out quad */
+      var e = t < .5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2) / 2;
+      var pct = e * 100;
+
+      /* clip: inset(0 0 {100-pct}% 0) */
+      hhImg.style.clipPath = 'inset(0 0 ' + (100 - pct).toFixed(2) + '% 0)';
+      /* scan line follows just ahead */
+      scan.style.top = (e * h) + 'px';
+
+      if (t < 1) {
+        requestAnimationFrame(tick);
+      } else {
+        hhImg.style.clipPath  = 'inset(0 0 0% 0)';
+        scan.style.transition = 'opacity .5s ease';
+        scan.style.opacity    = '0';
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+
+  /* ── wordmark rise ── */
+  function riseWM(delay) {
+    setTimeout(function () {
+      wmImg.style.transition = 'transform 1.1s cubic-bezier(0.16,1,0.3,1)';
+      wmImg.style.transform  = 'translateY(0)';
+    }, delay);
+  }
+
+  /* ── progress ─────────────────────────────────────────── */
+  var PROG_DUR = 2200;
+  var progDone = false;
+  var t0prog   = null;
+
+  function easeProg(t) {
+    /* fast start, slow middle, snap at end */
+    if (t < .45) return t * 1.56;
+    if (t < .85) return .702 + (t - .45) * .52;
+    return .910 + (t - .85) * .60;
+  }
+
+  function tickProg(now) {
+    if (!t0prog) t0prog = now;
+    var t   = Math.min((now - t0prog) / PROG_DUR, 1);
+    var pct = Math.min(easeProg(t) * 100, 100);
+
+    fill.style.transform = 'scaleX(' + (pct / 100).toFixed(4) + ')';
+    num.textContent      = String(Math.floor(pct)).padStart(3, '0');
+
+    if (t < 1) {
+      requestAnimationFrame(tickProg);
+    } else {
+      fill.style.transform = 'scaleX(1)';
+      num.textContent      = '100';
+      progDone = true;
+      showEnter();
+    }
+  }
+
+  function showEnter() {
+    enter.classList.add('on');
+    document.addEventListener('click', doEnter, { once: true });
+  }
+
+  /* ── enter ── */
+  var entering = false;
+  function doEnter() {
+    if (entering || !progDone) return;
+    entering = true;
+
+    flash.classList.add('on');
+
+    setTimeout(function () {
+      flash.classList.remove('on');
+      loader.classList.add('out');
+      prog.style.opacity   = '0';
+      prog.style.transition = 'opacity .4s ease';
+      enter.style.opacity  = '0';
+      enter.style.transition = 'opacity .4s ease';
+      skip.style.display   = 'none';
+      body.classList.remove('go');
+      body.classList.add('bye');
+
+      setTimeout(function () {
+        window.location.href = 'https://www.thehouseholdbrand.com/';
+      }, 800);
+    }, 200);
+  }
+
+  skip.addEventListener('click', function (e) {
+    e.stopPropagation();
+    progDone = true;
+    doEnter();
+  });
+
+  /* ── start sequence ── */
+  function start() {
+    var rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    body.classList.add('go'); /* bars slide in */
+
+    if (rm) {
+      hhImg.style.clipPath = 'inset(0 0 0% 0)';
+      wmImg.style.transform = 'translateY(0)';
+      glow.classList.add('on');
+      fill.style.transform = 'scaleX(1)';
+      num.textContent = '100';
+      prog.classList.add('on');
+      progDone = true;
+      showEnter();
+      return;
+    }
+
+    var SCAN_DELAY = 320;
+
+    setTimeout(runReveal, SCAN_DELAY);
+    riseWM(SCAN_DELAY + 650);                       /* wordmark rises mid-scan */
+    setTimeout(function () { glow.classList.add('on'); }, SCAN_DELAY + 400);
+    setTimeout(function () {
+      prog.classList.add('on');
+      requestAnimationFrame(tickProg);
+    }, 680);
+    setTimeout(function () { skip.classList.add('on'); }, 750);
+  }
+
+  /* wait for both images before starting */
+  var ready = 0;
+  function check() { if (++ready >= 2) start(); }
+
+  if (hhImg.complete) { ready++; } else { hhImg.addEventListener('load', check); hhImg.addEventListener('error', check); }
+  if (wmImg.complete) { ready++; } else { wmImg.addEventListener('load', check); wmImg.addEventListener('error', check); }
+  if (ready >= 2) start();
+
+})();
+</script>
+</body>
+</html>

@@ -21,11 +21,10 @@ export default function LandingPage() {
   const enteringRef   = useRef(false)
   const intervalRef   = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  /* Refs for SVG clipPath rects — animated via setAttribute */
+  /* Refs for SVG clipPath rects — animated via setAttribute / rAF */
   const plRef = useRef<SVGRectElement>(null)   // pillar-left clip
   const prRef = useRef<SVGRectElement>(null)   // pillar-right clip
   const cbRef = useRef<SVGRectElement>(null)   // crossbar clip
-  const rfRef = useRef<SVGRectElement>(null)   // roof clip
 
   const [phaseText, setPhaseText] = useState('[ Constructing pillar 01 ]')
 
@@ -36,7 +35,6 @@ export default function LandingPage() {
       plRef.current?.setAttribute('height', '170')
       prRef.current?.setAttribute('height', '170')
       cbRef.current?.setAttribute('width',  '112')
-      rfRef.current?.setAttribute('height', '70')
       return () => { document.body.classList.remove('skip-anim') }
     }
 
@@ -44,15 +42,12 @@ export default function LandingPage() {
       setTimeout(() => setPhaseText(p.text), p.t)
     )
 
-    /* Animate SVG clipPath rect attributes — direct setAttribute, no CSS involved */
-    const animAttr = (
+    /* Stepped setAttribute — pillars keep chunky brick-stack feel */
+    const animSteps = (
       el: SVGRectElement | null,
       attr: 'height' | 'width',
-      from: number,
-      to: number,
-      dur: number,
-      delay: number,
-      steps: number,
+      from: number, to: number,
+      dur: number, delay: number, steps: number,
     ) => {
       if (!el) return
       el.setAttribute(attr, String(from))
@@ -67,10 +62,40 @@ export default function LandingPage() {
       }, delay)
     }
 
-    animAttr(plRef.current, 'height', 0, 170, 1400, 1000, 22)
-    animAttr(prRef.current, 'height', 0, 170, 1400, 2400, 22)
-    animAttr(cbRef.current, 'width',  0, 112,  900, 3800, 16)
-    animAttr(rfRef.current, 'height', 0,  70,  900, 4700, 12)
+    /* rAF + cubic-bezier solver — crossbar smooth sweep */
+    const animEased = (
+      el: SVGRectElement | null,
+      attr: 'height' | 'width',
+      from: number, to: number,
+      dur: number, delay: number,
+      x1: number, y1: number, x2: number, y2: number,
+    ) => {
+      if (!el) return
+      el.setAttribute(attr, String(from))
+      setTimeout(() => {
+        const start = performance.now()
+        const tick = (now: number) => {
+          const t = Math.min((now - start) / dur, 1)
+          // Newton's method: find bezier param u s.t. Bx(u) = t, then eval By(u)
+          let u = t
+          for (let i = 0; i < 8; i++) {
+            const bx = 3*(1-u)**2*u*x1 + 3*(1-u)*u**2*x2 + u**3 - t
+            const dbx = 3*(1-u)**2*x1 + 6*(1-u)*u*(x2-x1) + 3*u**2*(1-x2)
+            u = Math.max(0, Math.min(1, u - bx / (dbx || 1e-6)))
+          }
+          const progress = 3*(1-u)**2*u*y1 + 3*(1-u)*u**2*y2 + u**3
+          el.setAttribute(attr, String(Math.round(from + (to - from) * progress)))
+          if (t < 1) requestAnimationFrame(tick)
+          else el.setAttribute(attr, String(to))
+        }
+        requestAnimationFrame(tick)
+      }, delay)
+    }
+
+    animSteps(plRef.current, 'height', 0, 170, 1400, 1000, 22)
+    animSteps(prRef.current, 'height', 0, 170, 1400, 2400, 22)
+    // crossbar: cubic-bezier(0.16, 1, 0.3, 1) — fast-start soft-land sweep
+    animEased(cbRef.current, 'width', 0, 112, 900, 3800, 0.16, 1, 0.3, 1)
 
     return () => {
       timers.forEach(clearTimeout)
@@ -167,7 +192,6 @@ export default function LandingPage() {
               <clipPath id="cp-pl"><rect ref={plRef} x="30"  y="100" width="116" height="0" /></clipPath>
               <clipPath id="cp-pr"><rect ref={prRef} x="254" y="100" width="116" height="0" /></clipPath>
               <clipPath id="cp-cb"><rect ref={cbRef} x="144" y="118" width="0"   height="130" /></clipPath>
-              <clipPath id="cp-rf"><rect ref={rfRef} x="0"   y="18"  width="400" height="0" /></clipPath>
             </defs>
 
             {/* Draft measurement marks */}
@@ -209,7 +233,7 @@ export default function LandingPage() {
             <rect className="pillar-left"  x="30"  y="100" width="116" height="170" fill="#0a0a0a" clipPath="url(#cp-pl)" />
             <rect className="pillar-right" x="254" y="100" width="116" height="170" fill="#0a0a0a" clipPath="url(#cp-pr)" />
             <rect className="crossbar"     x="144" y="118" width="112" height="130" fill="#0a0a0a" clipPath="url(#cp-cb)" />
-            <path className="roof"         d={ROOF}        fill="#0a0a0a" clipPath="url(#cp-rf)" />
+            <path className="roof"         d={ROOF}        fill="#0a0a0a" />
           </svg>
         </div>
 
