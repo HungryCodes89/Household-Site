@@ -9,7 +9,8 @@ const PHASES = [
   { t: 2400, text: '[ Constructing pillar 02 ]' },
   { t: 3800, text: '[ Joining the crossbar ]'   },
   { t: 4700, text: '[ Setting the roof ]'        },
-  { t: 5600, text: '[ House complete ]'           },
+  { t: 5400, text: '[ Inscribing the mark ]'     },
+  { t: 6500, text: '[ Household established ]'   },
 ]
 
 export default function LandingPage() {
@@ -248,7 +249,6 @@ export default function LandingPage() {
             src="/household-wordmark-white.png"
             alt="HOUSEHOLD EST. 2011"
             className="wordmark"
-            style={{ width: 'min(260px, 55vw)' }}
           />
         </div>
 
