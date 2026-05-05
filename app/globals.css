@@ -340,7 +340,7 @@ body.skip-anim .phase { opacity: 0; }
   .house-svg { width: min(300px, 62vw); }
   .house-block { margin-top: -1rem; }
   .wordmark-wrap { margin-top: 1.5rem; }
-  .wordmark { width: min(200px, 62vw); }
+  .wordmark { width: min(200px, calc(100vw - 3rem)); }
   .phase { bottom: 7rem; }
   .enter-prompt { bottom: 4.5rem; }
 }
