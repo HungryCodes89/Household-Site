@@ -197,12 +197,16 @@ body {
   shape-rendering: crispEdges;
 }
 
-/* HTML overlay — positioned by JS over SVG crossbar, animated for door swing */
+/* HTML overlay — sits over SVG crossbar, used for 3D door swing */
 .crossbar-overlay {
   position: absolute;
+  left: 36%;      /* 144/400 of SVG viewBox width  */
+  top: 40.69%;    /* 118/290 of SVG viewBox height */
+  width: 28%;     /* 112/400 */
+  height: 44.83%; /* 130/290 */
   pointer-events: none;
-  background: #0a0a0a;
-  opacity: 0;
+  background: red; /* DEBUG — remove after confirming alignment */
+  opacity: 0.5;    /* DEBUG — remove after confirming alignment */
   transform-origin: left center;
 }
 

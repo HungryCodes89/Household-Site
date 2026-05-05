@@ -100,38 +100,7 @@ export default function LandingPage() {
     }
   }, [])
 
-  /* Position the HTML overlay div exactly over the SVG crossbar */
-  useEffect(() => {
-    const positionOverlay = () => {
-      const svg        = document.querySelector('.house-svg') as SVGSVGElement | null
-      const overlay    = overlayRef.current
-      const houseBlock = document.getElementById('houseBlock')
-      if (!svg || !overlay || !houseBlock) return
-
-      const svgRect   = svg.getBoundingClientRect()
-      const blockRect = houseBlock.getBoundingClientRect()
-
-      // SVG viewBox is 400×290. Crossbar at x=144, y=118, w=112, h=130.
-      const xScale = svgRect.width  / 400
-      const yScale = svgRect.height / 290
-
-      overlay.style.left   = `${(svgRect.left - blockRect.left) + 144 * xScale}px`
-      overlay.style.top    = `${(svgRect.top  - blockRect.top)  + 118 * yScale}px`
-      overlay.style.width  = `${112 * xScale}px`
-      overlay.style.height = `${130 * yScale}px`
-    }
-
-    positionOverlay()
-    window.addEventListener('resize', positionOverlay)
-    // Re-sync after build animations settle
-    const t = setTimeout(positionOverlay, 6000)
-    return () => {
-      window.removeEventListener('resize', positionOverlay)
-      clearTimeout(t)
-    }
-  }, [])
-
-  const enterHousehold = useCallback(() => {
+const enterHousehold = useCallback(() => {
     if (enteringRef.current) return
     enteringRef.current = true
 
