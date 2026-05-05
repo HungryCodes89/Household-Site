@@ -121,17 +121,14 @@ const enterHousehold = useCallback(() => {
 
     // Swap: SVG crossbar hides, HTML overlay takes its place
     if (svgCrossbar) svgCrossbar.style.opacity = '0'
-    overlay.style.opacity = '1'
 
-    // 1. HTML overlay swings open on left hinge
-    // perspective() inline — bypasses CSS perspective/filter isolation on parent
-    overlay.animate(
-      [
-        { transform: 'perspective(1200px) rotateY(0deg)' },
-        { transform: 'perspective(1200px) rotateY(-105deg)' },
-      ],
-      { duration: 800, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'forwards' },
-    )
+    // 1. HTML overlay swings open on left hinge — CSS transition
+    overlay.style.opacity = '1'
+    console.log('[debug] crossbar swing start', overlay.getBoundingClientRect())
+    // rAF ensures the opacity/display change reflows before the transform triggers
+    requestAnimationFrame(() => {
+      overlay.style.transform = 'perspective(1200px) rotateY(-105deg)'
+    })
 
     // 2. Black void expands from where the crossbar is on screen
     wash.style.background    = '#000'
