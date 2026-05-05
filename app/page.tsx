@@ -142,7 +142,7 @@ const enterHousehold = useCallback(() => {
         { clipPath: 'circle(0% at 50% 52%)' },
         { clipPath: 'circle(150% at 50% 52%)' },
       ],
-      { duration: 1100, easing: 'cubic-bezier(0.65, 0, 0.35, 1)', delay: 400, fill: 'forwards' },
+      { duration: 1100, easing: 'cubic-bezier(0.65, 0, 0.35, 1)', delay: 400, fill: 'both' },
     )
 
     // 3. House scales up and fades — camera-push-through effect
