@@ -154,7 +154,6 @@ body {
   animation: houseDropShadow 0.8s 4.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   perspective: 1200px;
   perspective-origin: center;
-  transform-style: preserve-3d;
 }
 @keyframes houseDropShadow {
   to {
@@ -198,9 +197,13 @@ body {
   shape-rendering: crispEdges;
 }
 
-/* Crossbar-group is the hinge wrapper; crossbar rect stays for clip animation */
-.crossbar-group {
-  transform-origin: 144px 183px; /* SVG viewBox coords: left edge x=144, vertical center y=183 */
+/* HTML overlay — positioned by JS over SVG crossbar, animated for door swing */
+.crossbar-overlay {
+  position: absolute;
+  pointer-events: none;
+  background: #0a0a0a;
+  opacity: 0;
+  transform-origin: left center;
 }
 
 /* Roof drops in with overshoot — CSS animation, no clip needed */

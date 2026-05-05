@@ -15,6 +15,7 @@ const PHASES = [
 
 export default function LandingPage() {
   const washRef     = useRef<HTMLDivElement>(null)
+  const overlayRef  = useRef<HTMLDivElement>(null)
   const enteringRef = useRef(false)
 
   const plRef = useRef<SVGRectElement>(null)   // pillar-left clip
@@ -23,6 +24,7 @@ export default function LandingPage() {
 
   const [phaseText, setPhaseText] = useState('[ Constructing pillar 01 ]')
 
+  /* Build animation */
   useEffect(() => {
     const isSkip = new URLSearchParams(location.search).get('skip') === 'true'
     if (isSkip) {
@@ -98,15 +100,47 @@ export default function LandingPage() {
     }
   }, [])
 
+  /* Position the HTML overlay div exactly over the SVG crossbar */
+  useEffect(() => {
+    const positionOverlay = () => {
+      const svg        = document.querySelector('.house-svg') as SVGSVGElement | null
+      const overlay    = overlayRef.current
+      const houseBlock = document.getElementById('houseBlock')
+      if (!svg || !overlay || !houseBlock) return
+
+      const svgRect   = svg.getBoundingClientRect()
+      const blockRect = houseBlock.getBoundingClientRect()
+
+      // SVG viewBox is 400×290. Crossbar at x=144, y=118, w=112, h=130.
+      const xScale = svgRect.width  / 400
+      const yScale = svgRect.height / 290
+
+      overlay.style.left   = `${(svgRect.left - blockRect.left) + 144 * xScale}px`
+      overlay.style.top    = `${(svgRect.top  - blockRect.top)  + 118 * yScale}px`
+      overlay.style.width  = `${112 * xScale}px`
+      overlay.style.height = `${130 * yScale}px`
+    }
+
+    positionOverlay()
+    window.addEventListener('resize', positionOverlay)
+    // Re-sync after build animations settle
+    const t = setTimeout(positionOverlay, 6000)
+    return () => {
+      window.removeEventListener('resize', positionOverlay)
+      clearTimeout(t)
+    }
+  }, [])
+
   const enterHousehold = useCallback(() => {
     if (enteringRef.current) return
     enteringRef.current = true
 
-    const house         = document.getElementById('houseBlock')
-    const crossbarGroup = document.querySelector('.crossbar-group') as SVGGElement | null
-    const wash          = washRef.current
+    const house      = document.getElementById('houseBlock')
+    const svgCrossbar = document.querySelector('.crossbar') as SVGRectElement | null
+    const overlay    = overlayRef.current
+    const wash       = washRef.current
 
-    if (!house || !crossbarGroup || !wash) return
+    if (!house || !overlay || !wash) return
 
     // Fade out all chrome so attention is on the door swing
     document.querySelectorAll<HTMLElement>(
@@ -116,8 +150,12 @@ export default function LandingPage() {
       el.style.opacity    = '0'
     })
 
-    // 1. Crossbar swings open on its left hinge
-    crossbarGroup.animate(
+    // Swap: SVG crossbar hides, HTML overlay takes its place
+    if (svgCrossbar) svgCrossbar.style.opacity = '0'
+    overlay.style.opacity = '1'
+
+    // 1. HTML overlay swings open on left hinge — true 3D rotation
+    overlay.animate(
       [
         { transform: 'rotateY(0deg)' },
         { transform: 'rotateY(-105deg)' },
@@ -245,11 +283,12 @@ export default function LandingPage() {
 
             <rect className="pillar-left"  x="30"  y="100" width="116" height="170" fill="#0a0a0a" clipPath="url(#cp-pl)" />
             <rect className="pillar-right" x="254" y="100" width="116" height="170" fill="#0a0a0a" clipPath="url(#cp-pr)" />
-            <g className="crossbar-group">
-              <rect className="crossbar"   x="144" y="118" width="112" height="130" fill="#0a0a0a" clipPath="url(#cp-cb)" />
-            </g>
+            <rect className="crossbar"     x="144" y="118" width="112" height="130" fill="#0a0a0a" clipPath="url(#cp-cb)" />
             <path className="roof"         d={ROOF}        fill="#0a0a0a" />
           </svg>
+
+          {/* HTML overlay — sits over SVG crossbar, used for 3D door swing */}
+          <div className="crossbar-overlay" ref={overlayRef} aria-hidden="true" />
         </div>
 
         {/* Phase indicator — absolutely within stage */}
