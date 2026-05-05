@@ -101,6 +101,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 
 /* glow halos */
@@ -335,11 +336,18 @@ body.skip-anim .phase { opacity: 0; }
   .skip-btn { bottom: 1.25rem; right: 1.25rem; padding: 0.6rem 1.2rem; }
   .corner { width: 14px; height: 14px; }
 
-  /* Shrink house + tighten spacing so wordmark isn't clipped by stage overflow:hidden */
+  /* Shrink house + tighten spacing */
   .house-svg { width: min(300px, 62vw); }
   .house-block { margin-top: -1rem; }
   .wordmark-wrap { margin-top: 1.5rem; }
-  .wordmark { width: min(200px, calc(100vw - 3rem)); }
   .phase { bottom: 7rem; }
   .enter-prompt { bottom: 4.5rem; }
+
+  /* Replace clip-path wipe with fade on mobile — steps() final frame is unreliable on iOS */
+  .wordmark {
+    width: min(200px, calc(100vw - 3rem));
+    clip-path: none;
+    opacity: 0;
+    animation: fadeIn 0.8s 5.4s forwards;
+  }
 }
