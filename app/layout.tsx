@@ -20,6 +20,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'HOUSEHOLD',
   description: 'A house. A frequency. A way of moving.',
+  icons: { icon: '/household-wordmark-white.png' },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

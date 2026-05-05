@@ -124,8 +124,7 @@ const enterHousehold = useCallback(() => {
 
     // 1. HTML overlay swings open on left hinge — CSS transition
     overlay.style.opacity = '1'
-    console.log('[debug] crossbar swing start', overlay.getBoundingClientRect())
-    // rAF ensures the opacity/display change reflows before the transform triggers
+    // rAF ensures opacity reflow before transform triggers the transition
     requestAnimationFrame(() => {
       overlay.style.transform = 'perspective(1200px) rotateY(-105deg)'
     })

@@ -203,8 +203,8 @@ body {
   width: 28%;     /* 112/400 */
   height: 44.83%; /* 130/290 */
   pointer-events: none;
-  background: red; /* DEBUG — remove after confirming swing works */
-  opacity: 0.5;    /* DEBUG */
+  background: #0a0a0a;
+  opacity: 0;
   transform-origin: left center;
   transform: perspective(1200px) rotateY(0deg);
   transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
