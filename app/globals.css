@@ -275,41 +275,6 @@ body.skip-anim .wordmark { clip-path: inset(0% 0% 0% 0%) !important; }
 }
 .enter-prompt::before, .enter-prompt::after { content: '— '; margin: 0 0.5rem; }
 
-/* loader overlay */
-.loader {
-  position: fixed;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 200;
-  text-align: center;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.5s;
-}
-.loader.active { opacity: 1; }
-.loader-bar {
-  width: 240px;
-  height: 1px;
-  background: var(--whisper);
-  position: relative;
-  margin: 1rem auto;
-  overflow: hidden;
-}
-.loader-fill {
-  position: absolute;
-  inset: 0;
-  background: var(--ink);
-  transform: translateX(-100%);
-  transition: transform 0.1s linear;
-}
-.loader-text {
-  font-size: 0.65rem;
-  letter-spacing: 0.4em;
-  text-transform: uppercase;
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
-}
-
 /* skip button */
 .skip-btn {
   position: fixed;
@@ -330,17 +295,14 @@ body.skip-anim .wordmark { clip-path: inset(0% 0% 0% 0%) !important; }
 }
 .skip-btn:hover { color: var(--ink); border-color: var(--ink); }
 
-/* white wash */
+/* wash — used by door-swing transition, driven by WAAPI */
 .wash {
   position: fixed;
   inset: 0;
-  background: var(--paper);
   z-index: 150;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.6s;
 }
-.wash.active { opacity: 1; }
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }

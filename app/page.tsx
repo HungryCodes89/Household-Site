@@ -14,15 +14,9 @@ const PHASES = [
 ]
 
 export default function LandingPage() {
-  const stageRef      = useRef<HTMLDivElement>(null)
-  const loaderRef     = useRef<HTMLDivElement>(null)
-  const loaderFillRef = useRef<HTMLDivElement>(null)
-  const pctRef        = useRef<HTMLSpanElement>(null)
-  const washRef       = useRef<HTMLDivElement>(null)
-  const enteringRef   = useRef(false)
-  const intervalRef   = useRef<ReturnType<typeof setInterval> | null>(null)
+  const washRef     = useRef<HTMLDivElement>(null)
+  const enteringRef = useRef(false)
 
-  /* Refs for SVG clipPath rects — animated via setAttribute / rAF */
   const plRef = useRef<SVGRectElement>(null)   // pillar-left clip
   const prRef = useRef<SVGRectElement>(null)   // pillar-right clip
   const cbRef = useRef<SVGRectElement>(null)   // crossbar clip
@@ -108,34 +102,55 @@ export default function LandingPage() {
     if (enteringRef.current) return
     enteringRef.current = true
 
-    const stage  = stageRef.current
-    const loader = loaderRef.current
-    const fill   = loaderFillRef.current
-    const pct    = pctRef.current
-    const wash   = washRef.current
-    if (!stage || !loader || !fill || !pct || !wash) return
+    const house   = document.getElementById('houseBlock')
+    const crossbar = document.querySelector('.crossbar') as SVGRectElement | null
+    const wash    = washRef.current
 
-    stage.style.transition = 'opacity 0.6s'
-    stage.style.opacity    = '0.15'
-    loader.classList.add('active')
+    if (!house || !crossbar || !wash) return
 
-    let progress = 0
-    intervalRef.current = setInterval(() => {
-      progress += Math.max(0.5, (100 - progress) * 0.04)
-      if (progress >= 100) {
-        progress = 100
-        clearInterval(intervalRef.current!)
-        setTimeout(() => {
-          wash.classList.add('active')
-          setTimeout(() => {
-            console.log('[ Household entered. ]')
-            // TODO: router.push('/main')
-          }, 600)
-        }, 400)
-      }
-      pct.textContent      = Math.floor(progress).toString().padStart(3, '0')
-      fill.style.transform = `translateX(${-100 + progress}%)`
-    }, 30)
+    // Fade out all chrome so attention is on the door swing
+    document.querySelectorAll<HTMLElement>(
+      '.top-bar, .corner, .enter-prompt, .skip-btn, .wordmark-wrap, .phase'
+    ).forEach(el => {
+      el.style.transition = 'opacity 0.4s ease-out'
+      el.style.opacity    = '0'
+    })
+
+    // 1. Crossbar swings open on its left hinge
+    crossbar.animate(
+      [
+        { transform: 'rotateY(0deg)' },
+        { transform: 'rotateY(-105deg)' },
+      ],
+      { duration: 800, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'forwards' },
+    )
+
+    // 2. Black void expands from where the crossbar is on screen
+    wash.style.background    = '#000'
+    wash.style.opacity       = '1'
+    wash.style.pointerEvents = 'all'
+    wash.animate(
+      [
+        { clipPath: 'circle(0% at 50% 52%)' },
+        { clipPath: 'circle(150% at 50% 52%)' },
+      ],
+      { duration: 1100, easing: 'cubic-bezier(0.65, 0, 0.35, 1)', delay: 400, fill: 'forwards' },
+    )
+
+    // 3. House scales up and fades — camera-push-through effect
+    house.animate(
+      [
+        { transform: 'scale(1)',   opacity: '1' },
+        { transform: 'scale(1.5)', opacity: '0' },
+      ],
+      { duration: 1100, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', delay: 400, fill: 'forwards' },
+    )
+
+    // 4. Route after transition completes
+    setTimeout(() => {
+      console.log('[ Household entered. ]')
+      // TODO: router.push('/main')
+    }, 1800)
   }, [])
 
   /* keyboard trigger */
@@ -144,10 +159,7 @@ export default function LandingPage() {
       if (e.key === 'Enter' || e.key === ' ') enterHousehold()
     }
     document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('keydown', onKey)
-      if (intervalRef.current) clearInterval(intervalRef.current)
-    }
+    return () => document.removeEventListener('keydown', onKey)
   }, [enterHousehold])
 
   return (
@@ -173,12 +185,12 @@ export default function LandingPage() {
         </div>
       </div>
 
-      <div className="stage" ref={stageRef}>
+      <div className="stage">
         <div className="halo" aria-hidden="true" />
         <div className="glow" aria-hidden="true" />
 
-        {/* House — click triggers loader */}
         <div
+          id="houseBlock"
           className="house-block"
           role="button"
           aria-label="Enter the household"
@@ -238,7 +250,7 @@ export default function LandingPage() {
           </svg>
         </div>
 
-        {/* Phase indicator — sibling of house-block, absolutely within stage */}
+        {/* Phase indicator — absolutely within stage */}
         <div className="phase">
           <span>{phaseText}</span>
         </div>
@@ -252,21 +264,7 @@ export default function LandingPage() {
           />
         </div>
 
-        {/* Enter prompt */}
         <p className="enter-prompt">click to enter</p>
-      </div>
-
-      {/* BUILDING 000% loader */}
-      <div className="loader" ref={loaderRef}>
-        <div className="loader-text">
-          Building <span ref={pctRef}>000</span>%
-        </div>
-        <div className="loader-bar">
-          <div className="loader-fill" ref={loaderFillRef} />
-        </div>
-        <div className="loader-text" style={{ color: 'var(--ash)', fontSize: '0.55rem' }}>
-          Entering the Household
-        </div>
       </div>
 
       <button className="skip-btn" onClick={enterHousehold}>[ Skip Intro ]</button>
