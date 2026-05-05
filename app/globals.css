@@ -335,4 +335,12 @@ body.skip-anim .phase { opacity: 0; }
   .top-bar .tb-right { gap: 1rem; }
   .skip-btn { bottom: 1.25rem; right: 1.25rem; padding: 0.6rem 1.2rem; }
   .corner { width: 14px; height: 14px; }
+
+  /* Shrink house + tighten spacing so wordmark isn't clipped by stage overflow:hidden */
+  .house-svg { width: min(300px, 62vw); }
+  .house-block { margin-top: -1rem; }
+  .wordmark-wrap { margin-top: 1.5rem; }
+  .wordmark { width: min(200px, 62vw); }
+  .phase { bottom: 7rem; }
+  .enter-prompt { bottom: 4.5rem; }
 }
