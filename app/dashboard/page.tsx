@@ -6,7 +6,7 @@ export const revalidate = 0
 
 async function getBudget(): Promise<BudgetData | { error: string }> {
   try {
-    const res = await fetch(SHEET_CSV_URL, { next: { revalidate: 300 } })
+    const res = await fetch(SHEET_CSV_URL, { cache: 'no-store' })
     if (!res.ok) return { error: `Sheet fetch failed: ${res.status}` }
     const csv = await res.text()
     return parseBudgetCsv(csv)
