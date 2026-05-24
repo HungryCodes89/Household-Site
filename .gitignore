@@ -19,3 +19,6 @@ out/
 # OS
 .DS_Store
 Thumbs.db
+
+# TS incremental build cache
+tsconfig.tsbuildinfo

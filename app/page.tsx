@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 const ROOF = 'M 200 18 L 388 88 L 358 88 L 200 38 L 42 88 L 12 88 Z'
 
@@ -14,9 +15,12 @@ const PHASES = [
 ]
 
 export default function LandingPage() {
+  const router     = useRouter()
   const washRef     = useRef<HTMLDivElement>(null)
   const overlayRef  = useRef<HTMLDivElement>(null)
   const enteringRef = useRef(false)
+
+  useEffect(() => { router.prefetch('/dashboard') }, [router])
 
   const plRef = useRef<SVGRectElement>(null)   // pillar-left clip
   const prRef = useRef<SVGRectElement>(null)   // pillar-right clip
@@ -156,10 +160,9 @@ const enterHousehold = useCallback(() => {
 
     // 4. Route after transition completes
     setTimeout(() => {
-      console.log('[ Household entered. ]')
-      // TODO: router.push('/main')
+      router.push('/dashboard')
     }, 1800)
-  }, [])
+  }, [router])
 
   /* keyboard trigger */
   useEffect(() => {
