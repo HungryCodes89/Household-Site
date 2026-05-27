@@ -1,4 +1,14 @@
+export type TransactionItem = {
+  id: string
+  item_name: string
+  quantity: number
+  unit_price: number
+  line_total: number
+  notes: string | null
+}
+
 export type LedgerRow = {
+  id: string
   date: string          // raw / display date
   iso: string | null    // YYYY-MM-DD
   income: number
@@ -6,6 +16,9 @@ export type LedgerRow = {
   description: string
   balance: number
   category?: string
+  items: TransactionItem[]
+  itemsTotal: number
+  hasItems: boolean
 }
 
 export type BudgetData = {

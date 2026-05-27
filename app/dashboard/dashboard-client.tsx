@@ -300,25 +300,84 @@ function CategoryBars({ cats }: { cats: Array<{ name: string; income: number; ex
 
 /* ─── Ledger ─── */
 function Ledger({ rows }: { rows: LedgerRow[] }) {
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const toggle = (id: string) =>
+    setExpanded(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+
   return (
     <div className="dash-ledger">
       <div className="dash-ledger-head">
-        <span>Date</span><span>Description</span><span>Δ</span><span>Balance</span>
+        <span></span><span>Date</span><span>Description</span><span>Δ</span><span>Balance</span>
       </div>
       <div className="dash-ledger-body">
-        {rows.slice(0, 12).map((r, i) => {
+        {rows.slice(0, 12).map(r => {
           const delta = r.income > 0 ? r.income : -r.expenses
+          const isOpen = expanded.has(r.id)
           return (
-            <div key={i} className="dash-ledger-row">
-              <span className="dash-ledger-date">{r.iso ?? r.date}</span>
-              <span className="dash-ledger-desc">{r.description || categorize(r.description)}</span>
-              <span className={`dash-ledger-delta ${delta >= 0 ? 'pos' : 'neg'}`}>
-                {delta >= 0 ? '+' : '−'}${fmt(Math.abs(delta), 2)}
-              </span>
-              <span className="dash-ledger-bal">${fmt(r.balance, 2)}</span>
+            <div key={r.id} className="dash-ledger-group">
+              <div
+                className={`dash-ledger-row ${r.hasItems ? 'has-items' : ''} ${isOpen ? 'is-open' : ''}`}
+                onClick={r.hasItems ? () => toggle(r.id) : undefined}
+                role={r.hasItems ? 'button' : undefined}
+                aria-expanded={r.hasItems ? isOpen : undefined}
+              >
+                <span className="dash-ledger-chev">{r.hasItems ? (isOpen ? '▾' : '▸') : ''}</span>
+                <span className="dash-ledger-date">{r.iso ?? r.date}</span>
+                <span className="dash-ledger-desc">{r.description || categorize(r.description)}</span>
+                <span className={`dash-ledger-delta ${delta >= 0 ? 'pos' : 'neg'}`}>
+                  {delta >= 0 ? '+' : '−'}${fmt(Math.abs(delta), 2)}
+                </span>
+                <span className="dash-ledger-bal">${fmt(r.balance, 2)}</span>
+              </div>
+              {isOpen && <ItemsBreakdown row={r} />}
             </div>
           )
         })}
+      </div>
+    </div>
+  )
+}
+
+function ItemsBreakdown({ row }: { row: LedgerRow }) {
+  const parent = row.income > 0 ? row.income : row.expenses
+  const diff = parent - row.itemsTotal
+  const matches = Math.abs(diff) < 0.01
+  return (
+    <div className="dash-items">
+      <div className="dash-items-head">
+        <span>Item</span><span>Qty</span><span>Unit</span><span>Total</span><span>Notes</span>
+      </div>
+      <div className="dash-items-body">
+        {row.items.map(it => (
+          <div key={it.id} className="dash-items-row">
+            <span className="dash-items-name">{it.item_name}</span>
+            <span className="dash-items-qty">{it.quantity}</span>
+            <span className="dash-items-unit">${fmt(it.unit_price, 2)}</span>
+            <span className="dash-items-total">${fmt(it.line_total, 2)}</span>
+            <span className="dash-items-notes">{it.notes ?? ''}</span>
+          </div>
+        ))}
+      </div>
+      <div className="dash-items-foot">
+        <div className="dash-items-foot-row">
+          <span>Items total</span>
+          <span>${fmt(row.itemsTotal, 2)}</span>
+        </div>
+        <div className="dash-items-foot-row">
+          <span>Parent transaction</span>
+          <span>${fmt(parent, 2)}</span>
+        </div>
+        {!matches && (
+          <div className="dash-items-foot-row dash-items-mismatch">
+            <span>Mismatch · items don&apos;t sum to parent</span>
+            <span>{diff > 0 ? '+' : '−'}${fmt(Math.abs(diff), 2)}</span>
+          </div>
+        )}
       </div>
     </div>
   )
