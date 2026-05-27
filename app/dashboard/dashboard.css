@@ -125,6 +125,29 @@ body:has(.dash-shell) { overflow: auto; }
   align-items: flex-end;
   gap: 0.4rem;
 }
+.dash-header-meta-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+.dash-logout {
+  background: transparent;
+  border: 1px solid var(--hair);
+  color: var(--cream-dim);
+  padding: 0.32rem 0.65rem;
+  font-family: var(--mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.dash-logout:hover:not(:disabled) {
+  border-color: var(--red);
+  color: var(--red);
+  box-shadow: 0 0 12px rgba(255, 94, 108, 0.18);
+}
+.dash-logout:disabled { opacity: 0.5; cursor: not-allowed; }
 .dash-clock {
   font-size: 0.7rem;
   letter-spacing: 0.18em;

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { categorize, type BudgetData, type LedgerRow } from '@/lib/budget'
+import LogoutButton from './logout-button'
 import './dashboard.css'
 
 type Props = { data: BudgetData | { error: string } }
@@ -130,9 +131,12 @@ function Header() {
 
       <div className="dash-header-meta">
         <LiveClock />
-        <div className="dash-live">
-          <span className="dash-live-dot" />
-          <span>LIVE</span>
+        <div className="dash-header-meta-row">
+          <div className="dash-live">
+            <span className="dash-live-dot" />
+            <span>LIVE</span>
+          </div>
+          <LogoutButton />
         </div>
       </div>
     </header>
