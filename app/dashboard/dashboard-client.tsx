@@ -163,7 +163,7 @@ function LiveClock() {
 /* ─── KPI Tile ─── */
 function Kpi({
   label, value, prefix = '', suffix = '', tone = 'cream',
-  hint, fixed = 0, absValue = false, infinity = false, live = false,
+  hint, fixed = 2, absValue = false, infinity = false, live = false,
 }: {
   label: string
   value: number
