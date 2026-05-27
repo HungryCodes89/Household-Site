@@ -41,8 +41,16 @@ export async function loadBudget(): Promise<BudgetData | { error: string }> {
     }
   })
 
-  const totalIncome = rows.reduce((s, r) => s + r.income, 0)
-  const totalExpenses = rows.reduce((s, r) => s + r.expenses, 0)
+  // Opening-balance rows are carried-forward cash, not real income/expense —
+  // exclude from totals but keep in the running-balance walk above.
+  const totalIncome = rows.reduce(
+    (s, r) => r.category === 'Opening Balance' ? s : s + r.income,
+    0,
+  )
+  const totalExpenses = rows.reduce(
+    (s, r) => r.category === 'Opening Balance' ? s : s + r.expenses,
+    0,
+  )
   const currentBalance = rows.length ? rows[rows.length - 1].balance : 0
 
   return {
