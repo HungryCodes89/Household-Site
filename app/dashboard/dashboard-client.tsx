@@ -1,9 +1,15 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { categorize, type BudgetData, type LedgerRow } from '@/lib/budget'
+import { categorize, type BudgetData, type LedgerRow, type TransactionItem } from '@/lib/budget'
+import {
+  addTransactionItem,
+  updateTransactionItem,
+  deleteTransactionItem,
+  type ItemInput,
+} from './actions'
 import LogoutButton from './logout-button'
 import './dashboard.css'
 
@@ -347,22 +353,61 @@ function ItemsBreakdown({ row }: { row: LedgerRow }) {
   const parent = row.income > 0 ? row.income : row.expenses
   const diff = parent - row.itemsTotal
   const matches = Math.abs(diff) < 0.01
+
+  const [adding, setAdding] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
   return (
     <div className="dash-items">
       <div className="dash-items-head">
-        <span>Item</span><span>Qty</span><span>Unit</span><span>Total</span><span>Notes</span>
+        <span>Item</span><span>Qty</span><span>Unit</span><span>Total</span><span>Notes</span><span></span>
       </div>
       <div className="dash-items-body">
-        {row.items.map(it => (
-          <div key={it.id} className="dash-items-row">
-            <span className="dash-items-name">{it.item_name}</span>
-            <span className="dash-items-qty">{it.quantity}</span>
-            <span className="dash-items-unit">${fmt(it.unit_price, 2)}</span>
-            <span className="dash-items-total">${fmt(it.line_total, 2)}</span>
-            <span className="dash-items-notes">{it.notes ?? ''}</span>
-          </div>
-        ))}
+        {row.items.map(it =>
+          editingId === it.id ? (
+            <ItemEditRow
+              key={it.id}
+              mode="edit"
+              item={it}
+              onDone={() => { setEditingId(null); setError(null) }}
+              setError={setError}
+            />
+          ) : (
+            <ItemRow
+              key={it.id}
+              item={it}
+              onEdit={() => { setEditingId(it.id); setError(null) }}
+              setError={setError}
+            />
+          ),
+        )}
+        {adding && (
+          <ItemEditRow
+            mode="add"
+            transactionId={row.id}
+            onDone={() => { setAdding(false); setError(null) }}
+            setError={setError}
+          />
+        )}
+        {row.items.length === 0 && !adding && (
+          <div className="dash-items-empty">No items yet.</div>
+        )}
       </div>
+
+      <div className="dash-items-actions">
+        {!adding && (
+          <button
+            type="button"
+            className="dash-items-add"
+            onClick={() => { setAdding(true); setEditingId(null); setError(null) }}
+          >
+            + Add item
+          </button>
+        )}
+        {error && <span className="dash-items-error">{error}</span>}
+      </div>
+
       <div className="dash-items-foot">
         <div className="dash-items-foot-row">
           <span>Items total</span>
@@ -379,6 +424,131 @@ function ItemsBreakdown({ row }: { row: LedgerRow }) {
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+function ItemRow({
+  item, onEdit, setError,
+}: {
+  item: TransactionItem
+  onEdit: () => void
+  setError: (msg: string | null) => void
+}) {
+  const [pending, startTransition] = useTransition()
+  const [confirming, setConfirming] = useState(false)
+
+  const onDelete = () => {
+    startTransition(async () => {
+      const res = await deleteTransactionItem(item.id)
+      if (!res.ok) {
+        setError(res.error)
+        setConfirming(false)
+      }
+    })
+  }
+
+  return (
+    <div className="dash-items-row">
+      <span className="dash-items-name">{item.item_name}</span>
+      <span className="dash-items-qty">{item.quantity}</span>
+      <span className="dash-items-unit">${fmt(item.unit_price, 2)}</span>
+      <span className="dash-items-total">${fmt(item.line_total, 2)}</span>
+      <span className="dash-items-notes">{item.notes ?? ''}</span>
+      <span className="dash-items-rowact">
+        {confirming ? (
+          <>
+            <button type="button" className="dash-items-btn danger" onClick={onDelete} disabled={pending}>
+              {pending ? '…' : 'delete?'}
+            </button>
+            <button type="button" className="dash-items-btn" onClick={() => setConfirming(false)} disabled={pending}>
+              cancel
+            </button>
+          </>
+        ) : (
+          <>
+            <button type="button" className="dash-items-btn" onClick={onEdit} aria-label="Edit">edit</button>
+            <button type="button" className="dash-items-btn" onClick={() => { setConfirming(true); setError(null) }} aria-label="Delete">del</button>
+          </>
+        )}
+      </span>
+    </div>
+  )
+}
+
+type EditRowProps =
+  | { mode: 'add'; transactionId: string; onDone: () => void; setError: (msg: string | null) => void; item?: undefined }
+  | { mode: 'edit'; item: TransactionItem; onDone: () => void; setError: (msg: string | null) => void; transactionId?: undefined }
+
+function ItemEditRow(props: EditRowProps) {
+  const [name, setName] = useState(props.mode === 'edit' ? props.item.item_name : '')
+  const [qty, setQty] = useState<number>(props.mode === 'edit' ? props.item.quantity : 1)
+  const [unit, setUnit] = useState<number>(props.mode === 'edit' ? props.item.unit_price : 0)
+  const [notes, setNotes] = useState(props.mode === 'edit' ? (props.item.notes ?? '') : '')
+  const [pending, startTransition] = useTransition()
+
+  const livePreview = (Number.isFinite(qty) && Number.isFinite(unit)) ? qty * unit : 0
+
+  const save = () => {
+    const payload: ItemInput = {
+      item_name: name,
+      quantity: qty,
+      unit_price: unit,
+      notes: notes || null,
+    }
+    startTransition(async () => {
+      const res = props.mode === 'edit'
+        ? await updateTransactionItem(props.item.id, payload)
+        : await addTransactionItem(props.transactionId, payload)
+      if (res.ok) props.onDone()
+      else props.setError(res.error)
+    })
+  }
+
+  return (
+    <div className="dash-items-row dash-items-edit">
+      <input
+        className="dash-items-input"
+        value={name}
+        onChange={e => setName(e.target.value)}
+        placeholder="Item name"
+        autoFocus
+        disabled={pending}
+      />
+      <input
+        className="dash-items-input"
+        type="number"
+        min={1}
+        step={1}
+        value={qty}
+        onChange={e => setQty(parseInt(e.target.value, 10) || 0)}
+        disabled={pending}
+      />
+      <input
+        className="dash-items-input"
+        type="number"
+        min={0}
+        step={0.01}
+        value={unit}
+        onChange={e => setUnit(parseFloat(e.target.value) || 0)}
+        disabled={pending}
+      />
+      <span className="dash-items-total dash-items-preview">${fmt(livePreview, 2)}</span>
+      <input
+        className="dash-items-input"
+        value={notes}
+        onChange={e => setNotes(e.target.value)}
+        placeholder="Notes (optional)"
+        disabled={pending}
+      />
+      <span className="dash-items-rowact">
+        <button type="button" className="dash-items-btn primary" onClick={save} disabled={pending}>
+          {pending ? '…' : 'save'}
+        </button>
+        <button type="button" className="dash-items-btn" onClick={props.onDone} disabled={pending}>
+          cancel
+        </button>
+      </span>
     </div>
   )
 }
