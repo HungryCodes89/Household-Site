@@ -98,3 +98,44 @@ create policy "meta: authenticated update"
 -- crystal clear — no anon policies are defined above, so anon cannot read.)
 -- If you ever see Supabase Studio warn about a missing policy for `anon`,
 -- that's expected and correct here.
+
+-- ── transaction_items ───────────────────────────────────────────────────────
+-- Optional per-transaction line-item breakdowns (e.g. an invoice's individual
+-- items). Items are descriptive and independent of the parent amount — the
+-- dashboard flags drift but never auto-corrects. Parent amount is the source
+-- of truth for what actually hit the bank.
+create table if not exists public.transaction_items (
+  id              uuid primary key default gen_random_uuid(),
+  transaction_id  uuid not null references public.transactions(id) on delete cascade,
+  item_name       text not null,
+  quantity        int  not null default 1 check (quantity >= 1),
+  unit_price      numeric(12,2) not null check (unit_price >= 0),
+  notes           text,
+  created_at      timestamptz not null default now()
+);
+
+create index if not exists transaction_items_transaction_id_idx
+  on public.transaction_items (transaction_id);
+
+alter table public.transaction_items enable row level security;
+
+drop policy if exists "transaction_items: authenticated read"   on public.transaction_items;
+drop policy if exists "transaction_items: authenticated write"  on public.transaction_items;
+drop policy if exists "transaction_items: authenticated update" on public.transaction_items;
+drop policy if exists "transaction_items: authenticated delete" on public.transaction_items;
+
+create policy "transaction_items: authenticated read"
+  on public.transaction_items for select
+  to authenticated using (true);
+
+create policy "transaction_items: authenticated write"
+  on public.transaction_items for insert
+  to authenticated with check (true);
+
+create policy "transaction_items: authenticated update"
+  on public.transaction_items for update
+  to authenticated using (true) with check (true);
+
+create policy "transaction_items: authenticated delete"
+  on public.transaction_items for delete
+  to authenticated using (true);
