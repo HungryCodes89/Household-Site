@@ -2,6 +2,17 @@
 -- HouseHold Records — Financial Ops schema
 -- Run this in Supabase Dashboard → SQL Editor → New query → paste → Run.
 -- Idempotent: safe to re-run.
+--
+-- ▸ Canonical source of truth for the database state.
+--   Running this file against a fresh Supabase project must produce the same
+--   schema as the live `mcxyexmdlnrruweyuxvl` project.
+--
+-- ▸ KEEP IN SYNC: every migration shipped to the live project must also be
+--   folded back into this file in the same change. If you introduce a new
+--   table, column, index, policy, trigger, or constraint via the SQL Editor,
+--   reflect it here in the same PR. A separate migration file may exist for
+--   the live project's incremental run, but schema.sql is the authoritative
+--   end-state.
 -- ─────────────────────────────────────────────────────────────────────────────
 
 -- ── transactions ────────────────────────────────────────────────────────────
