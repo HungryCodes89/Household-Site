@@ -12,11 +12,15 @@ export type ItemInput = {
 
 export type ActionResult = { ok: true } | { ok: false; error: string }
 
-async function requireUser() {
+type AuthResult =
+  | { ok: false; error: string }
+  | { ok: true; supabase: ReturnType<typeof createClient> }
+
+async function requireUser(): Promise<AuthResult> {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'You need to sign in to make changes.' } as const
-  return { supabase } as const
+  if (!user) return { ok: false, error: 'You need to sign in to make changes.' }
+  return { ok: true, supabase }
 }
 
 function validate(input: ItemInput): string | null {
@@ -31,7 +35,7 @@ export async function addTransactionItem(
   input: ItemInput,
 ): Promise<ActionResult> {
   const auth = await requireUser()
-  if ('error' in auth) return { ok: false, error: auth.error }
+  if (!auth.ok) return { ok: false, error: auth.error }
   const validation = validate(input)
   if (validation) return { ok: false, error: validation }
 
@@ -52,7 +56,7 @@ export async function updateTransactionItem(
   input: ItemInput,
 ): Promise<ActionResult> {
   const auth = await requireUser()
-  if ('error' in auth) return { ok: false, error: auth.error }
+  if (!auth.ok) return { ok: false, error: auth.error }
   const validation = validate(input)
   if (validation) return { ok: false, error: validation }
 
@@ -69,7 +73,7 @@ export async function updateTransactionItem(
 
 export async function deleteTransactionItem(id: string): Promise<ActionResult> {
   const auth = await requireUser()
-  if ('error' in auth) return { ok: false, error: auth.error }
+  if (!auth.ok) return { ok: false, error: auth.error }
 
   const { error } = await auth.supabase.from('transaction_items').delete().eq('id', id)
   if (error) return { ok: false, error: error.message }
