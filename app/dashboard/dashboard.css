@@ -224,6 +224,20 @@ body:has(.dash-shell) { overflow: auto; }
 .dash-kpi-amber { --accent: var(--amber); }
 .dash-kpi-red   { --accent: var(--red); }
 
+/* Clickable KPI tiles act as ledger filters */
+.dash-kpi.is-clickable {
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+}
+.dash-kpi.is-clickable:hover { border-color: var(--accent); }
+.dash-kpi.is-clickable:active { transform: translateY(1px); }
+.dash-kpi.is-clickable:focus-visible { outline: 1px solid var(--accent); outline-offset: 2px; }
+.dash-kpi.is-clickable.is-active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--panel));
+}
+.dash-kpi.is-clickable.is-active::after { width: 3px; }
+
 .dash-kpi-label {
   display: flex;
   align-items: center;
@@ -362,7 +376,7 @@ body:has(.dash-shell) { overflow: auto; }
   padding: 0 0.25rem 0.5rem;
   border-bottom: 1px dashed var(--hair);
 }
-.dash-ledger-body { display: flex; flex-direction: column; }
+.dash-ledger-body { display: flex; flex-direction: column; max-height: 520px; overflow-y: auto; }
 .dash-ledger-group { display: flex; flex-direction: column; }
 .dash-ledger-row {
   padding: 0.5rem 0.25rem;

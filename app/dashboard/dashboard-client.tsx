@@ -37,13 +37,29 @@ export default function DashboardClient({ data }: Props) {
   return <Dashboard data={data} />
 }
 
+type LedgerView = 'overview' | 'income' | 'expense'
+
 function Dashboard({ data }: { data: BudgetData }) {
   const { totalInvested, currentBalance, totalIncome, totalExpenses, net, rows } = data
+  const [view, setView] = useState<LedgerView>('overview')
   const sorted = useMemo(
     () => [...rows].sort((a, b) => (a.iso ?? '').localeCompare(b.iso ?? '')),
     [rows],
   )
   const recent = useMemo(() => [...sorted].reverse(), [sorted])
+
+  // Ledger rows filtered by the active KPI view (newest first).
+  const ledgerRows = useMemo(() => {
+    if (view === 'income') return recent.filter(r => r.income > 0)
+    if (view === 'expense') return recent.filter(r => r.expenses > 0)
+    return recent
+  }, [recent, view])
+
+  const ledgerMeta = useMemo(() => {
+    if (view === 'income') return { title: 'Income', sum: totalIncome, prefix: '+$' }
+    if (view === 'expense') return { title: 'Expenses', sum: totalExpenses, prefix: '−$' }
+    return { title: 'Overview · All Entries', sum: net, prefix: net >= 0 ? '+$' : '−$' }
+  }, [view, totalIncome, totalExpenses, net])
 
   // Category breakdown — totals income/expense per bucket
   const categories = useMemo(() => {
@@ -86,10 +102,10 @@ function Dashboard({ data }: { data: BudgetData }) {
 
       <section className="dash-body">
         <div className="dash-kpis">
-          <Kpi label="Total Invested"    value={totalInvested}  prefix="$" tone="cream"  hint="lifetime capital" />
-          <Kpi label="Account Balance"   value={currentBalance} prefix="$" tone="neon"   hint="current" live />
-          <Kpi label="Income · Period"   value={totalIncome}    prefix="+$" tone="green"  hint={`${rows.filter(r => r.income > 0).length} entries`} />
-          <Kpi label="Expenses · Period" value={totalExpenses}  prefix="-$" tone="amber"  hint={`${rows.filter(r => r.expenses > 0).length} entries`} />
+          <Kpi label="Overview"         value={rows.length}    suffix=" entries" tone="cream" fixed={0} hint="all data" onClick={() => setView('overview')} active={view === 'overview'} />
+          <Kpi label="Account Balance"   value={currentBalance} prefix="$" tone="neon"   hint="current · view all" live onClick={() => setView('overview')} active={view === 'overview'} />
+          <Kpi label="Income · Period"   value={totalIncome}    prefix="+$" tone="green"  hint={`${rows.filter(r => r.income > 0).length} entries · filter`} onClick={() => setView('income')} active={view === 'income'} />
+          <Kpi label="Expenses · Period" value={totalExpenses}  prefix="-$" tone="amber"  hint={`${rows.filter(r => r.expenses > 0).length} entries · filter`} onClick={() => setView('expense')} active={view === 'expense'} />
           <Kpi label="Net · Period"      value={net}            prefix={net >= 0 ? '+$' : '-$'} absValue tone={net >= 0 ? 'green' : 'red'} hint="income − expenses" />
           <Kpi label="Cash Runway"       value={isFinite(runway) ? runway : 0} suffix=" mo" tone={isFinite(runway) ? 'neon' : 'cream'} hint={isFinite(runway) ? `@ $${burn.toFixed(2)}/day burn` : 'positive cashflow'} fixed={1} infinity={!isFinite(runway)} />
         </div>
@@ -110,8 +126,11 @@ function Dashboard({ data }: { data: BudgetData }) {
           <Panel title="Categories" tag="ALLOCATION">
             <CategoryBars cats={categories} />
           </Panel>
-          <Panel title="Recent Ledger" tag={`${rows.length} ENTRIES`}>
-            <Ledger rows={recent} />
+          <Panel
+            title={ledgerMeta.title}
+            tag={`${ledgerRows.length} · ${ledgerMeta.prefix}${fmt(Math.abs(ledgerMeta.sum), 2)}`}
+          >
+            <Ledger rows={ledgerRows} view={view} />
           </Panel>
         </div>
       </section>
@@ -311,6 +330,7 @@ function LiveClock() {
 function Kpi({
   label, value, prefix = '', suffix = '', tone = 'cream',
   hint, fixed = 2, absValue = false, infinity = false, live = false,
+  onClick, active = false,
 }: {
   label: string
   value: number
@@ -322,12 +342,22 @@ function Kpi({
   absValue?: boolean
   infinity?: boolean
   live?: boolean
+  onClick?: () => void
+  active?: boolean
 }) {
   const displayed = useCountUp(value)
   const shown = absValue ? Math.abs(displayed) : displayed
   const formatted = infinity ? '∞' : fmt(shown, fixed)
+  const clickable = !!onClick
   return (
-    <div className={`dash-kpi dash-kpi-${tone}`}>
+    <div
+      className={`dash-kpi dash-kpi-${tone} ${clickable ? 'is-clickable' : ''} ${active ? 'is-active' : ''}`}
+      onClick={onClick}
+      role={clickable ? 'button' : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      aria-pressed={clickable ? active : undefined}
+      onKeyDown={clickable ? (e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.() } }) : undefined}
+    >
       <div className="dash-kpi-label">
         <span>{label}</span>
         {live && <span className="dash-kpi-live"><span className="dash-live-dot" /></span>}
@@ -446,10 +476,15 @@ function CategoryBars({ cats }: { cats: Array<{ name: string; income: number; ex
 }
 
 /* ─── Ledger ─── */
-function Ledger({ rows }: { rows: LedgerRow[] }) {
+function Ledger({ rows, view = 'overview' }: { rows: LedgerRow[]; view?: LedgerView }) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [editingId, setEditingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  if (rows.length === 0) {
+    const what = view === 'income' ? 'income' : view === 'expense' ? 'expenses' : 'entries'
+    return <div className="dash-empty">No {what} yet.</div>
+  }
   const toggle = (id: string) =>
     setExpanded(prev => {
       const next = new Set(prev)
@@ -464,7 +499,7 @@ function Ledger({ rows }: { rows: LedgerRow[] }) {
         <span></span><span>Date</span><span>Description</span><span>Δ</span><span>Balance</span><span></span>
       </div>
       <div className="dash-ledger-body">
-        {rows.slice(0, 12).map(r => {
+        {rows.map(r => {
           const delta = r.income > 0 ? r.income : -r.expenses
           const isOpen = expanded.has(r.id)
 
