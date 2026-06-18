@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { categorize, type BudgetData, type LedgerRow, type TransactionItem } from '@/lib/budget'
@@ -149,6 +150,7 @@ function todayISO(): string {
 }
 
 function AddEntryForm() {
+  const router = useRouter()
   const [kind, setKind] = useState<'expense' | 'income'>('expense')
   const [date, setDate] = useState(todayISO())
   const [amount, setAmount] = useState('')
@@ -178,6 +180,7 @@ function AddEntryForm() {
         setCategory('')
         setDate(todayISO())
         setDone(true)
+        router.refresh()
       } else {
         setError(res.error)
       }
@@ -553,6 +556,7 @@ function LedgerRowActions({
   onEdit: () => void
   setError: (msg: string | null) => void
 }) {
+  const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [confirming, setConfirming] = useState(false)
 
@@ -562,7 +566,9 @@ function LedgerRowActions({
     e.stopPropagation()
     startTransition(async () => {
       const res = await deleteTransaction(row.id)
-      if (!res.ok) {
+      if (res.ok) {
+        router.refresh()
+      } else {
         setError(res.error)
         setConfirming(false)
       }
@@ -602,6 +608,7 @@ function LedgerEditRow({
   const [amount, setAmount] = useState(String(row.income > 0 ? row.income : row.expenses))
   const [description, setDescription] = useState(row.description)
   const [category, setCategory] = useState(row.category && row.category !== 'Opening Balance' ? row.category : '')
+  const router = useRouter()
   const [pending, startTransition] = useTransition()
 
   const save = () => {
@@ -614,7 +621,7 @@ function LedgerEditRow({
     }
     startTransition(async () => {
       const res = await updateTransaction(row.id, payload)
-      if (res.ok) onDone()
+      if (res.ok) { onDone(); router.refresh() }
       else setError(res.error)
     })
   }
@@ -735,13 +742,16 @@ function ItemRow({
   onEdit: () => void
   setError: (msg: string | null) => void
 }) {
+  const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [confirming, setConfirming] = useState(false)
 
   const onDelete = () => {
     startTransition(async () => {
       const res = await deleteTransactionItem(item.id)
-      if (!res.ok) {
+      if (res.ok) {
+        router.refresh()
+      } else {
         setError(res.error)
         setConfirming(false)
       }
@@ -785,6 +795,7 @@ function ItemEditRow(props: EditRowProps) {
   const [qty, setQty] = useState<number>(props.mode === 'edit' ? props.item.quantity : 1)
   const [unit, setUnit] = useState<number>(props.mode === 'edit' ? props.item.unit_price : 0)
   const [notes, setNotes] = useState(props.mode === 'edit' ? (props.item.notes ?? '') : '')
+  const router = useRouter()
   const [pending, startTransition] = useTransition()
 
   const livePreview = (Number.isFinite(qty) && Number.isFinite(unit)) ? qty * unit : 0
@@ -800,7 +811,7 @@ function ItemEditRow(props: EditRowProps) {
       const res = props.mode === 'edit'
         ? await updateTransactionItem(props.item.id, payload)
         : await addTransactionItem(props.transactionId, payload)
-      if (res.ok) props.onDone()
+      if (res.ok) { props.onDone(); router.refresh() }
       else props.setError(res.error)
     })
   }
