@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { categorize, type BudgetData, type LedgerRow, type TransactionItem } from '@/lib/budget'
 import {
   addTransaction,
+  updateTransaction,
+  deleteTransaction,
   addTransactionItem,
   updateTransactionItem,
   deleteTransactionItem,
@@ -446,6 +448,8 @@ function CategoryBars({ cats }: { cats: Array<{ name: string; income: number; ex
 /* ─── Ledger ─── */
 function Ledger({ rows }: { rows: LedgerRow[] }) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const toggle = (id: string) =>
     setExpanded(prev => {
       const next = new Set(prev)
@@ -457,12 +461,25 @@ function Ledger({ rows }: { rows: LedgerRow[] }) {
   return (
     <div className="dash-ledger">
       <div className="dash-ledger-head">
-        <span></span><span>Date</span><span>Description</span><span>Δ</span><span>Balance</span>
+        <span></span><span>Date</span><span>Description</span><span>Δ</span><span>Balance</span><span></span>
       </div>
       <div className="dash-ledger-body">
         {rows.slice(0, 12).map(r => {
           const delta = r.income > 0 ? r.income : -r.expenses
           const isOpen = expanded.has(r.id)
+
+          if (editingId === r.id) {
+            return (
+              <div key={r.id} className="dash-ledger-group">
+                <LedgerEditRow
+                  row={r}
+                  onDone={() => { setEditingId(null); setError(null) }}
+                  setError={setError}
+                />
+              </div>
+            )
+          }
+
           return (
             <div key={r.id} className="dash-ledger-group">
               <div
@@ -478,11 +495,120 @@ function Ledger({ rows }: { rows: LedgerRow[] }) {
                   {delta >= 0 ? '+' : '−'}${fmt(Math.abs(delta), 2)}
                 </span>
                 <span className="dash-ledger-bal">${fmt(r.balance, 2)}</span>
+                <LedgerRowActions
+                  row={r}
+                  onEdit={() => { setEditingId(r.id); setError(null) }}
+                  setError={setError}
+                />
               </div>
               {isOpen && <ItemsBreakdown row={r} />}
             </div>
           )
         })}
+      </div>
+      {error && <div className="dash-ledger-error">{error}</div>}
+    </div>
+  )
+}
+
+function LedgerRowActions({
+  row, onEdit, setError,
+}: {
+  row: LedgerRow
+  onEdit: () => void
+  setError: (msg: string | null) => void
+}) {
+  const [pending, startTransition] = useTransition()
+  const [confirming, setConfirming] = useState(false)
+
+  const stop = (e: React.MouseEvent) => e.stopPropagation()
+
+  const onDelete = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    startTransition(async () => {
+      const res = await deleteTransaction(row.id)
+      if (!res.ok) {
+        setError(res.error)
+        setConfirming(false)
+      }
+    })
+  }
+
+  return (
+    <span className="dash-ledger-rowact" onClick={stop}>
+      {confirming ? (
+        <>
+          <button type="button" className="dash-items-btn danger" onClick={onDelete} disabled={pending}>
+            {pending ? '…' : 'delete?'}
+          </button>
+          <button type="button" className="dash-items-btn" onClick={e => { stop(e); setConfirming(false) }} disabled={pending}>
+            cancel
+          </button>
+        </>
+      ) : (
+        <>
+          <button type="button" className="dash-items-btn" onClick={e => { stop(e); onEdit() }} aria-label="Edit entry">edit</button>
+          <button type="button" className="dash-items-btn" onClick={e => { stop(e); setConfirming(true); setError(null) }} aria-label="Delete entry">del</button>
+        </>
+      )}
+    </span>
+  )
+}
+
+function LedgerEditRow({
+  row, onDone, setError,
+}: {
+  row: LedgerRow
+  onDone: () => void
+  setError: (msg: string | null) => void
+}) {
+  const [kind, setKind] = useState<'expense' | 'income'>(row.income > 0 ? 'income' : 'expense')
+  const [date, setDate] = useState(row.iso ?? '')
+  const [amount, setAmount] = useState(String(row.income > 0 ? row.income : row.expenses))
+  const [description, setDescription] = useState(row.description)
+  const [category, setCategory] = useState(row.category && row.category !== 'Opening Balance' ? row.category : '')
+  const [pending, startTransition] = useTransition()
+
+  const save = () => {
+    const payload: TransactionInput = {
+      kind,
+      occurred_at: date,
+      amount: parseFloat(amount),
+      description,
+      category: category || null,
+    }
+    startTransition(async () => {
+      const res = await updateTransaction(row.id, payload)
+      if (res.ok) onDone()
+      else setError(res.error)
+    })
+  }
+
+  return (
+    <div className="dash-ledger-edit">
+      <div className="dash-add-toggle" role="tablist" aria-label="Entry type">
+        <button type="button" role="tab" aria-selected={kind === 'expense'}
+          className={`dash-add-tab ${kind === 'expense' ? 'is-active out' : ''}`}
+          onClick={() => setKind('expense')} disabled={pending}>− Expense</button>
+        <button type="button" role="tab" aria-selected={kind === 'income'}
+          className={`dash-add-tab ${kind === 'income' ? 'is-active in' : ''}`}
+          onClick={() => setKind('income')} disabled={pending}>+ Sale</button>
+      </div>
+      <div className="dash-ledger-edit-fields">
+        <input className="dash-add-input" type="date" value={date}
+          onChange={e => setDate(e.target.value)} disabled={pending} aria-label="Date" />
+        <input className="dash-add-input" type="number" min={0} step={0.01} inputMode="decimal"
+          value={amount} onChange={e => setAmount(e.target.value)} disabled={pending} aria-label="Amount" />
+        <input className="dash-add-input" type="text" placeholder="Description" value={description}
+          onChange={e => setDescription(e.target.value)} disabled={pending} aria-label="Description" />
+        <input className="dash-add-input" type="text" placeholder="Category (auto)" value={category}
+          onChange={e => setCategory(e.target.value)} disabled={pending} aria-label="Category" />
+      </div>
+      <div className="dash-ledger-edit-act">
+        <button type="button" className="dash-items-btn primary" onClick={save} disabled={pending}>
+          {pending ? '…' : 'save'}
+        </button>
+        <button type="button" className="dash-items-btn" onClick={onDone} disabled={pending}>cancel</button>
       </div>
     </div>
   )

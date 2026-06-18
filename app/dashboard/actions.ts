@@ -68,6 +68,38 @@ export async function addTransaction(input: TransactionInput): Promise<ActionRes
   return { ok: true }
 }
 
+export async function updateTransaction(
+  id: string,
+  input: TransactionInput,
+): Promise<ActionResult> {
+  const auth = await requireUser()
+  if (!auth.ok) return { ok: false, error: auth.error }
+  const validation = validateTransaction(input)
+  if (validation) return { ok: false, error: validation }
+
+  const { error } = await auth.supabase.from('transactions').update({
+    kind: input.kind,
+    occurred_at: input.occurred_at,
+    amount: input.amount,
+    description: input.description.trim(),
+    category: input.category?.trim() || null,
+  }).eq('id', id)
+  if (error) return { ok: false, error: error.message }
+  revalidatePath('/dashboard')
+  return { ok: true }
+}
+
+export async function deleteTransaction(id: string): Promise<ActionResult> {
+  const auth = await requireUser()
+  if (!auth.ok) return { ok: false, error: auth.error }
+
+  // transaction_items cascade-delete via the FK (on delete cascade).
+  const { error } = await auth.supabase.from('transactions').delete().eq('id', id)
+  if (error) return { ok: false, error: error.message }
+  revalidatePath('/dashboard')
+  return { ok: true }
+}
+
 export async function addTransactionItem(
   transactionId: string,
   input: ItemInput,

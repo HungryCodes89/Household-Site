@@ -348,7 +348,7 @@ body:has(.dash-shell) { overflow: auto; }
 .dash-ledger-head,
 .dash-ledger-row {
   display: grid;
-  grid-template-columns: 18px 96px 1fr 84px 100px;
+  grid-template-columns: 18px 96px 1fr 84px 100px 78px;
   gap: 0.5rem;
   align-items: center;
   font-size: 0.7rem;
@@ -384,6 +384,42 @@ body:has(.dash-shell) { overflow: auto; }
 .dash-ledger-delta.pos { color: var(--green); text-align: right; }
 .dash-ledger-delta.neg { color: var(--amber); text-align: right; }
 .dash-ledger-bal { color: var(--cream); text-align: right; font-weight: 500; }
+
+/* Row actions — hidden until row hover, revealed on demand */
+.dash-ledger-rowact {
+  display: flex;
+  gap: 0.25rem;
+  justify-content: flex-end;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.dash-ledger-row:hover .dash-ledger-rowact,
+.dash-ledger-rowact:focus-within { opacity: 1; }
+@media (hover: none) { .dash-ledger-rowact { opacity: 1; } }
+
+.dash-ledger-error {
+  color: var(--red);
+  font-size: 0.62rem;
+  letter-spacing: 0.05em;
+  padding: 0.5rem 0.25rem 0;
+}
+
+/* Inline transaction edit */
+.dash-ledger-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.7rem 0.5rem;
+  background: rgba(125, 249, 255, 0.04);
+  border-radius: 2px;
+  border-bottom: 1px solid rgba(242, 239, 230, 0.04);
+}
+.dash-ledger-edit-fields {
+  display: grid;
+  grid-template-columns: 120px 110px 1fr 150px;
+  gap: 0.5rem;
+}
+.dash-ledger-edit-act { display: flex; gap: 0.4rem; }
 
 /* ─── Items breakdown (nested under expanded ledger row) ─── */
 .dash-items {
@@ -692,7 +728,8 @@ body:has(.dash-shell) { overflow: auto; }
   .dash-add-grid { grid-template-columns: 1fr; }
   .dash-row-split { grid-template-columns: 1fr; }
   .dash-ledger-head,
-  .dash-ledger-row { grid-template-columns: 14px 72px 1fr 76px 92px; font-size: 0.62rem; }
+  .dash-ledger-row { grid-template-columns: 14px 64px 1fr 70px 84px 64px; font-size: 0.62rem; }
+  .dash-ledger-edit-fields { grid-template-columns: 1fr 1fr; }
   .dash-items { margin-left: 14px; font-size: 0.58rem; }
   .dash-items-head,
   .dash-items-row { grid-template-columns: 1.2fr 40px 56px 64px 1fr 86px; gap: 0.35rem; }
