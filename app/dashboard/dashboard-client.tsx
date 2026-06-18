@@ -5,10 +5,12 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { categorize, type BudgetData, type LedgerRow, type TransactionItem } from '@/lib/budget'
 import {
+  addTransaction,
   addTransactionItem,
   updateTransactionItem,
   deleteTransactionItem,
   type ItemInput,
+  type TransactionInput,
 } from './actions'
 import LogoutButton from './logout-button'
 import './dashboard.css'
@@ -91,6 +93,12 @@ function Dashboard({ data }: { data: BudgetData }) {
         </div>
 
         <div className="dash-row">
+          <Panel title="Add Entry" tag="QUICK ADD">
+            <AddEntryForm />
+          </Panel>
+        </div>
+
+        <div className="dash-row">
           <Panel title="Balance Trajectory" tag="LIVE PLOT">
             <BalanceChart rows={sorted} />
           </Panel>
@@ -108,6 +116,137 @@ function Dashboard({ data }: { data: BudgetData }) {
 
       <Footer generatedAt={data.generatedAt} />
     </main>
+  )
+}
+
+/* ─── Add Entry form ─── */
+function todayISO(): string {
+  const d = new Date()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${mm}-${dd}`
+}
+
+function AddEntryForm() {
+  const [kind, setKind] = useState<'expense' | 'income'>('expense')
+  const [date, setDate] = useState(todayISO())
+  const [amount, setAmount] = useState('')
+  const [description, setDescription] = useState('')
+  const [category, setCategory] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [done, setDone] = useState(false)
+  const [pending, startTransition] = useTransition()
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    setDone(false)
+    const amt = parseFloat(amount)
+    const payload: TransactionInput = {
+      kind,
+      occurred_at: date,
+      amount: amt,
+      description,
+      category: category || null,
+    }
+    startTransition(async () => {
+      const res = await addTransaction(payload)
+      if (res.ok) {
+        setAmount('')
+        setDescription('')
+        setCategory('')
+        setDate(todayISO())
+        setDone(true)
+      } else {
+        setError(res.error)
+      }
+    })
+  }
+
+  return (
+    <form className="dash-add" onSubmit={submit}>
+      <div className="dash-add-toggle" role="tablist" aria-label="Entry type">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={kind === 'expense'}
+          className={`dash-add-tab ${kind === 'expense' ? 'is-active out' : ''}`}
+          onClick={() => setKind('expense')}
+          disabled={pending}
+        >
+          − Expense
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={kind === 'income'}
+          className={`dash-add-tab ${kind === 'income' ? 'is-active in' : ''}`}
+          onClick={() => setKind('income')}
+          disabled={pending}
+        >
+          + Sale
+        </button>
+      </div>
+
+      <div className="dash-add-grid">
+        <label className="dash-add-field">
+          <span className="dash-add-label">Date</span>
+          <input
+            className="dash-add-input"
+            type="date"
+            value={date}
+            onChange={e => setDate(e.target.value)}
+            disabled={pending}
+            required
+          />
+        </label>
+        <label className="dash-add-field">
+          <span className="dash-add-label">Amount</span>
+          <input
+            className="dash-add-input"
+            type="number"
+            min={0}
+            step={0.01}
+            inputMode="decimal"
+            placeholder="0.00"
+            value={amount}
+            onChange={e => setAmount(e.target.value)}
+            disabled={pending}
+            required
+          />
+        </label>
+        <label className="dash-add-field dash-add-field-wide">
+          <span className="dash-add-label">Description</span>
+          <input
+            className="dash-add-input"
+            type="text"
+            placeholder={kind === 'income' ? 'e.g. Scotland order' : 'e.g. Firebird printing'}
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            disabled={pending}
+          />
+        </label>
+        <label className="dash-add-field">
+          <span className="dash-add-label">Category <span className="dash-add-opt">opt.</span></span>
+          <input
+            className="dash-add-input"
+            type="text"
+            placeholder="auto"
+            value={category}
+            onChange={e => setCategory(e.target.value)}
+            disabled={pending}
+          />
+        </label>
+      </div>
+
+      <div className="dash-add-actions">
+        <button type="submit" className={`dash-add-submit ${kind === 'income' ? 'in' : 'out'}`} disabled={pending}>
+          {pending ? 'Recording…' : kind === 'income' ? 'Record sale' : 'Record expense'}
+        </button>
+        {error && <span className="dash-add-error">{error}</span>}
+        {done && !error && <span className="dash-add-ok">✓ Added</span>}
+      </div>
+    </form>
   )
 }
 

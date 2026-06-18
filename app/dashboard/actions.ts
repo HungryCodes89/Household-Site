@@ -10,6 +10,14 @@ export type ItemInput = {
   notes: string | null
 }
 
+export type TransactionInput = {
+  kind: 'income' | 'expense'
+  occurred_at: string // YYYY-MM-DD
+  amount: number
+  description: string
+  category: string | null
+}
+
 export type ActionResult = { ok: true } | { ok: false; error: string }
 
 type AuthResult =
@@ -28,6 +36,36 @@ function validate(input: ItemInput): string | null {
   if (!Number.isFinite(input.quantity) || input.quantity < 1) return 'Quantity must be at least 1.'
   if (!Number.isFinite(input.unit_price) || input.unit_price < 0) return 'Unit price cannot be negative.'
   return null
+}
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
+
+function validateTransaction(input: TransactionInput): string | null {
+  if (input.kind !== 'income' && input.kind !== 'expense') return 'Type must be a sale or an expense.'
+  if (!ISO_DATE.test(input.occurred_at)) return 'A valid date is required.'
+  if (!Number.isFinite(input.amount) || input.amount <= 0) return 'Amount must be greater than zero.'
+  return null
+}
+
+export async function addTransaction(input: TransactionInput): Promise<ActionResult> {
+  const auth = await requireUser()
+  if (!auth.ok) return { ok: false, error: auth.error }
+  const validation = validateTransaction(input)
+  if (validation) return { ok: false, error: validation }
+
+  const { data: { user } } = await auth.supabase.auth.getUser()
+
+  const { error } = await auth.supabase.from('transactions').insert({
+    kind: input.kind,
+    occurred_at: input.occurred_at,
+    amount: input.amount,
+    description: input.description.trim(),
+    category: input.category?.trim() || null,
+    created_by: user?.id ?? null,
+  })
+  if (error) return { ok: false, error: error.message }
+  revalidatePath('/dashboard')
+  return { ok: true }
 }
 
 export async function addTransactionItem(
