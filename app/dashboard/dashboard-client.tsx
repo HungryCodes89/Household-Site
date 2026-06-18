@@ -112,12 +112,6 @@ function Dashboard({ data }: { data: BudgetData }) {
         </div>
 
         <div className="dash-row">
-          <Panel title="Add Entry" tag="QUICK ADD">
-            <AddEntryForm />
-          </Panel>
-        </div>
-
-        <div className="dash-row">
           <Panel title="Balance Trajectory" tag="LIVE PLOT">
             <BalanceChart rows={sorted} />
           </Panel>
@@ -132,6 +126,12 @@ function Dashboard({ data }: { data: BudgetData }) {
             tag={`${ledgerRows.length} · ${ledgerMeta.prefix}${fmt(Math.abs(ledgerMeta.sum), 2)}`}
           >
             <Ledger rows={ledgerRows} view={view} />
+          </Panel>
+        </div>
+
+        <div className="dash-row">
+          <Panel title="Add Entry" tag="QUICK ADD">
+            <AddEntryForm />
           </Panel>
         </div>
       </section>
